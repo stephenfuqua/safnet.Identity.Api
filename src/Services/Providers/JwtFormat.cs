@@ -29,9 +29,9 @@ namespace FlightNode.Identity.Services.Providers
             // in the main application. The existing UnhandledExceptionFilter
             // is not catching this, so not sure yet how to intercept it.
 
-            string audienceId = Properties.Settings.Default.AudienceId;
+            string audienceId = Properties.Settings.Default.ClientId;
 
-            string symmetricKeyAsBase64 = Properties.Settings.Default.AudienceSecret;
+            string symmetricKeyAsBase64 = Properties.Settings.Default.ClientSecret;
             var keyByteArray = TextEncodings.Base64Url.Decode(symmetricKeyAsBase64);
             var signingKey = new HmacSigningCredentials(keyByteArray);
 

@@ -26,18 +26,18 @@ namespace FlightNode.Identity.Properties {
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("JustMakeupSomething")]
-        public string AudienceId {
+        public string ClientId {
             get {
-                return ((string)(this["AudienceId"]));
+                return ((string)(this["ClientId"]));
             }
         }
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("xJJR1vffcprjhi8vK6g4DKDmRq_yKY4Ip1svAmRaVV8")]
-        public string AudienceSecret {
+        public string ClientSecret {
             get {
-                return ((string)(this["AudienceSecret"]));
+                return ((string)(this["ClientSecret"]));
             }
         }
         
@@ -52,11 +52,19 @@ namespace FlightNode.Identity.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("Data Source=(localdb)\\ProjectsV12;Database=FlightNode.Tests;Integrated Security=t" +
-            "rue;")]
+        [global::System.Configuration.DefaultSettingValueAttribute("FlightNode")]
         public string IdentityConnectionString {
             get {
                 return ((string)(this["IdentityConnectionString"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("http://localhost")]
+        public string IssuerUrl {
+            get {
+                return ((string)(this["IssuerUrl"]));
             }
         }
     }

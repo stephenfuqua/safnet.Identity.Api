@@ -16,15 +16,15 @@ namespace FlightNode.Identity.Services.Providers
 {
     public static class ApiStartup
     {
-        public static IAppBuilder Configure(IAppBuilder app, string issuer)
+        public static IAppBuilder Configure(IAppBuilder app)
         {
-            app = ConfigureIdentityManagement(app, issuer);
-            app = ConfigureOAuthTokenConsumption(app, issuer);
+            app = ConfigureIdentityManagement(app);
+            app = ConfigureOAuthTokenConsumption(app);
 
             return app;
         }
 
-        private static IAppBuilder ConfigureIdentityManagement(IAppBuilder app, string issuer)
+        private static IAppBuilder ConfigureIdentityManagement(IAppBuilder app)
         {
             app.CreatePerOwinContext(IdentityDbContext.Create);
             app.CreatePerOwinContext<AppUserManager>(AppUserManager.Create);
@@ -39,7 +39,7 @@ namespace FlightNode.Identity.Services.Providers
                 Provider = new OAuthProvider(),
                 ApplicationCanDisplayErrors = false,
                 
-                AccessTokenFormat = new JwtFormat(issuer)
+                AccessTokenFormat = new JwtFormat(Properties.Settings.Default.IssuerUrl)
             };
 
             // OAuth 2.0 Bearer Access Token Generation
@@ -48,20 +48,20 @@ namespace FlightNode.Identity.Services.Providers
             return app;
         }
 
-        private static IAppBuilder ConfigureOAuthTokenConsumption(IAppBuilder app, string issuer)
+        private static IAppBuilder ConfigureOAuthTokenConsumption(IAppBuilder app)
         {
-            var audienceId = Properties.Settings.Default.AudienceId;
-            var audienceSecret = TextEncodings.Base64Url.Decode(Properties.Settings.Default.AudienceSecret);
+            var clientId = Properties.Settings.Default.ClientId;
+            var clientSecret = TextEncodings.Base64Url.Decode(Properties.Settings.Default.ClientSecret);
 
             // Api controllers with an [Authorize] attribute will be validated with JWT
             app.UseJwtBearerAuthentication(
                 new JwtBearerAuthenticationOptions
                 {
                     AuthenticationMode = AuthenticationMode.Active,
-                    AllowedAudiences = new[] { audienceId },
+                    AllowedAudiences = new[] { clientId },
                     IssuerSecurityTokenProviders = new IIssuerSecurityTokenProvider[]
                     {
-                        new SymmetricKeyIssuerSecurityTokenProvider(issuer, audienceSecret)
+                        new SymmetricKeyIssuerSecurityTokenProvider(Properties.Settings.Default.IssuerUrl, clientSecret)
                     }
                 });
 
