@@ -61,13 +61,25 @@ namespace FlightNode.Identity.Services.Models
         [DataType(DataType.Password)]
         [StringLength(256)]
         public string Password { get; set; }
+
+        /// <summary>
+        /// When true, the user is locked out of the system.
+        /// </summary>
+        public bool LockedOut { get; set; }
         
         /// <summary>
-        /// Roles to which this user belongs
+        /// Roles to which this user belongs.
         /// </summary>
         public IList<string> Roles { get; set; }
 
+        /// <summary>
+        /// Returns concatenated GivenName and FamilyName.
+        /// </summary>
         public string DisplayName {  get { return GivenName + " " + FamilyName;  } }
 
+        /// <summary>
+        /// Gets or sets the active status, typically one of { active, inactive, pending }.
+        /// </summary>
+        public string Active { get; set; }
     }
 }

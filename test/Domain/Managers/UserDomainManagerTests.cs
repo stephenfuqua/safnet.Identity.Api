@@ -69,6 +69,8 @@ namespace FlightNode.Identity.UnitTests.Domain.Logic
             const string password = "bien gracias, y tú?";
             const string email = "jose@jalapenos.com";
             const int userId = 2342;
+            const bool lockedOut = true;
+            const string active = "pending";
 
             private UserModel RunTest()
             {
@@ -81,14 +83,16 @@ namespace FlightNode.Identity.UnitTests.Domain.Logic
                     PrimaryPhoneNumber = primaryPhoneNumber,
                     SecondaryPhoneNumber = secondaryPhoneNumber,
                     UserName = userName,
-                    Roles = new List<string>()
+                    Roles = new List<string>(),
+                    LockedOut = lockedOut,
+                    Active = active
                 };
 
                 return BuildSystem().Create(input);
             }
 
             [Fact]
-            public void ConfirmUserIdIsSet()
+            public void ConfirmUserIdIsSetInReturnObject()
             {
                 mockUserManager.Setup(x => x.AddToRolesAsync(It.Is<int>(y => y == userId), It.Is<string[]>(y => y.Length == 0)))
                     .Returns(Task.Run(() => SuccessResult.Create()));
@@ -102,7 +106,8 @@ namespace FlightNode.Identity.UnitTests.Domain.Logic
                         Assert.Equal(secondaryPhoneNumber, actual.MobilePhoneNumber);
                         Assert.Equal(userName, actual.UserName);
                         Assert.Equal(email, actual.Email);
-                        Assert.True(actual.Active);
+                        Assert.Equal(lockedOut, actual.LockoutEnabled);
+                        Assert.Equal(active, actual.Active);
                     })
                     .Returns((User actual, string p) =>
                     {
@@ -144,7 +149,7 @@ namespace FlightNode.Identity.UnitTests.Domain.Logic
                         Assert.Equal(secondaryPhoneNumber, actual.MobilePhoneNumber);
                         Assert.Equal(userName, actual.UserName);
                         Assert.Equal(email, actual.Email);
-                        Assert.True(actual.Active);
+                        Assert.Equal(lockedOut, actual.LockoutEnabled);
                     })
                     .Returns((User actual, string p) =>
                     {
@@ -180,6 +185,8 @@ namespace FlightNode.Identity.UnitTests.Domain.Logic
             const int userId = 2342;
             const string oldRole = "Old";
             const string newRole = "new";
+            const bool lockedOut = true;
+            const string active = "pending";
 
             private void RunTest()
             {
@@ -193,7 +200,9 @@ namespace FlightNode.Identity.UnitTests.Domain.Logic
                     SecondaryPhoneNumber = secondaryPhoneNumber,
                     UserName = userName,
                     UserId = userId,
-                    Roles = new List<string>() {  newRole }
+                    Roles = new List<string>() {  newRole },
+                    LockedOut = lockedOut,
+                    Active = active
                 };
 
                 BuildSystem().Update(input);
@@ -216,7 +225,8 @@ namespace FlightNode.Identity.UnitTests.Domain.Logic
                         Assert.Equal(secondaryPhoneNumber, actual.MobilePhoneNumber);
                         Assert.Equal(userName, actual.UserName);
                         Assert.Equal(email, actual.Email);
-                        Assert.True(actual.Active);
+                        Assert.Equal(active, actual.Active);
+                        Assert.Equal(lockedOut, actual.LockoutEnabled);
                     })
                     .Returns((User actual) =>
                     {
@@ -280,7 +290,8 @@ namespace FlightNode.Identity.UnitTests.Domain.Logic
                         Assert.Equal(secondaryPhoneNumber, actual.MobilePhoneNumber);
                         Assert.Equal(userName, actual.UserName);
                         Assert.Equal(email, actual.Email);
-                        Assert.True(actual.Active);
+                        Assert.Equal(active, actual.Active);
+                        Assert.Equal(lockedOut, actual.LockoutEnabled);
                     })
                     .Returns((User actual) =>
                     {
@@ -322,7 +333,7 @@ namespace FlightNode.Identity.UnitTests.Domain.Logic
                         Assert.Equal(secondaryPhoneNumber, actual.MobilePhoneNumber);
                         Assert.Equal(userName, actual.UserName);
                         Assert.Equal(email, actual.Email);
-                        Assert.True(actual.Active);
+                        Assert.Equal(active, actual.Active);
                     })
                     .Returns((User actual) =>
                     {
@@ -372,7 +383,8 @@ namespace FlightNode.Identity.UnitTests.Domain.Logic
                 const string phoneNumber = "(555) 555-5555";
                 const string userName = "asdfasd";
                 const string mobileNumber = "(555) 555-5554";
-                const bool active = false;
+                const bool lockedOut = true;
+                const string active = "active";
 
                 private IEnumerable<UserModel> RunTheTest()
                 {
@@ -383,7 +395,8 @@ namespace FlightNode.Identity.UnitTests.Domain.Logic
                         Id = userId,
                         Email = email,
                         PhoneNumber = phoneNumber,
-                        UserName = userName
+                        UserName = userName,
+                        LockoutEnabled = lockedOut
                     };
 
                     mockUserManager.SetupGet(x => x.Users)
@@ -410,9 +423,10 @@ namespace FlightNode.Identity.UnitTests.Domain.Logic
                 const string phoneNumber = "(555) 555-5555";
                 const string userName = "asdfasd";
                 const string mobileNumber = "(555) 555-5554";
-                const bool active = true;
+                const string active = "active";
                 const string familyName = "last";
                 const string givenName = "first";
+                const bool lockedOut = true;
 
                 private IEnumerable<UserModel> RunTheTest()
                 {
@@ -425,7 +439,8 @@ namespace FlightNode.Identity.UnitTests.Domain.Logic
                         PhoneNumber = phoneNumber,
                         UserName = userName,
                         FamilyName = familyName,
-                        GivenName = givenName
+                        GivenName = givenName,
+                        LockoutEnabled = lockedOut
                     };
 
                     mockUserManager.SetupGet(x => x.Users)
@@ -442,6 +457,13 @@ namespace FlightNode.Identity.UnitTests.Domain.Logic
                     var results = RunTheTest();
                     Assert.Equal(1, results.Count());
                 }
+
+                [Fact]
+                public void ConfirmLockoutIsMapped()
+                {
+                    Assert.Equal(lockedOut, RunTheTest().First().LockedOut);
+                }
+
 
                 [Fact]
                 public void ConfirmMobileNumberIsMapped()
@@ -493,7 +515,7 @@ namespace FlightNode.Identity.UnitTests.Domain.Logic
                 const string phoneNumber = "(555) 555-5555";
                 const string userName = "asdfasd";
                 const string mobileNumber = "(555) 555-5554";
-                const bool active = true;
+                const string active = "active";
                 const string familyName = "last";
                 const string givenName = "first";
 
@@ -513,7 +535,7 @@ namespace FlightNode.Identity.UnitTests.Domain.Logic
 
                     mockUserManager.SetupGet(x => x.Users)
                         .Returns(new List<User>() {
-                            new User { Active = true },
+                            new User { Active = active },
                            user
                         }.AsQueryable());
 
@@ -596,10 +618,11 @@ namespace FlightNode.Identity.UnitTests.Domain.Logic
                 const string phoneNumber = "(555) 555-5555";
                 const string userName = "asdfasd";
                 const string mobileNumber = "(555) 555-5554";
-                const bool active = true;
+                const string active = "active";
                 const string familyName = "last";
                 const string givenName = "first";
                 const string role = "Administrator";
+                const bool lockedOut = true;
 
                 private UserModel RunTheTest()
                 {
@@ -612,7 +635,8 @@ namespace FlightNode.Identity.UnitTests.Domain.Logic
                         PhoneNumber = phoneNumber,
                         UserName = userName,
                         FamilyName = familyName,
-                        GivenName = givenName
+                        GivenName = givenName,
+                        LockoutEnabled = lockedOut
                     };
 
                     mockUserManager.Setup(x => x.FindByIdAsync(It.Is<int>(y => y == userId)))
@@ -621,6 +645,12 @@ namespace FlightNode.Identity.UnitTests.Domain.Logic
                         .ReturnsAsync(new List<string>() { role });
 
                     return BuildSystem().FindById(userId);
+                }
+
+                [Fact]
+                public void ConfirmMapsLockout()
+                {
+                    Assert.Equal(lockedOut, RunTheTest().LockedOut);
                 }
 
                 [Fact]

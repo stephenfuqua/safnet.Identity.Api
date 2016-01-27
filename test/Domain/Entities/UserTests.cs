@@ -9,7 +9,7 @@ namespace FlightNode.Identity.UnitTests.Domain.Entities
         [Fact]
         public void ConfirmGetAndSetForActive()
         {
-            var expected = true;
+            var expected = "active";
             var system = new User();
 
             system.Active = expected;
@@ -31,9 +31,5 @@ namespace FlightNode.Identity.UnitTests.Domain.Entities
 
             Assert.Equal(expected, actual);
         }
-
-        // TODO: remember how to verify that the "PhoneNumber" data type has been applied to that field
-
-        // TODO: test GenerateUserIdentityAsync, if it is even kept.
     }
 }

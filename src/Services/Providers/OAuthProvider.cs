@@ -22,9 +22,9 @@ namespace FlightNode.Identity.Services.Providers
 
             var user = await userManager.FindAsync(context.UserName, context.Password);
 
-            if (user == null)
+            if (user == null || user.LockoutEnabled)
             {
-                context.SetError("invalid_grant", "The user name or password is incorrect.");
+                context.SetError("invalid_grant", "The user name or password is incorrect, or the account is locked out.");
                 return;
             }
 

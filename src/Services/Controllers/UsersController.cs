@@ -41,7 +41,7 @@ namespace FligthNode.Identity.Services.Controllers
         /// </summary>
         /// <returns>Action result containing an array of users</returns>
         /// <example>
-        /// GET: /api/v1/User
+        /// GET: /api/v1/users
         /// </example>
         [Authorize(Roles = "Administrator, Coordinator")]
         public IHttpActionResult Get()
@@ -49,7 +49,13 @@ namespace FligthNode.Identity.Services.Controllers
             return WrapWithTryCatch(() =>
             {
                 var all = _manager.FindAll();
-                return Ok(all);
+
+                if (all.Any())
+                {
+                    return Ok(all);
+                }
+
+                return NotFound();
             });
         }
 
@@ -59,7 +65,7 @@ namespace FligthNode.Identity.Services.Controllers
         /// <param name="id">User Id</param>
         /// <returns>Action result containing the requested user, or status code 404 "not found".</returns>
         /// <example>
-        /// GET: /api/v1/user/1
+        /// GET: /api/v1/users/1
         /// </example>
         [Authorize(Roles = "Administrator, Coordinator")]
         public IHttpActionResult Get(int id)
@@ -84,7 +90,7 @@ namespace FligthNode.Identity.Services.Controllers
         /// <param name="user"><see cref="UserModel"/></param>
         /// <returns>Action result containing the created user record (including the new ID), with status code 201 "created".</returns>
         /// <example>
-        /// POST: /api/v1/user
+        /// POST: /api/v1/users
         /// {
         ///   "userName": "dirigible@asfddfsdfs.com",
         ///   "givenName": "Juana",
@@ -116,11 +122,45 @@ namespace FligthNode.Identity.Services.Controllers
             });
         }
 
+        /// <summary>
+        /// Adds a new user to the system via self-registration
+        /// </summary>
+        /// <param name="user"><see cref="UserModel"/></param>
+        /// <returns>Action result containing the created user record (including the new ID), with status code 201 "created".</returns>
+        /// <example>
+        /// POST: /api/v1/users/register
+        /// {
+        ///   "userName": "dirigible@asfddfsdfs.com",
+        ///   "givenName": "Juana",
+        ///   "familyName": "Coneja",
+        ///   "email": "dirigible@asfddfsdfs.com",
+        ///   "primaryPhoneNumber": "555-555-5555",
+        ///   "secondaryPhoneNumber": "(555) 555-5554",
+        ///   "password": "deerEatRabbits?"
+        /// }
+        /// </example>
+        [Route("api/v1/users/register")]
+        public IHttpActionResult Register([FromBody]UserModel user)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
 
+            return WrapWithTryCatch(() =>
+            {
+                user.LockedOut = true;
+                user.Active = "pending";
 
-        // TODO: create an administrative way to change password, which would
-        // not require knowing the old password, but would require being in the 
-        // proper administrative role.
+                var result = _manager.Create(user);
+
+                var location = Request.RequestUri
+                                      .ToString()
+                                      .AppendPathSegment(result.UserId.ToString());
+
+                return Created(location, result);
+            });
+        }
 
         /// <summary>
         /// Changes a user's password
@@ -129,7 +169,7 @@ namespace FligthNode.Identity.Services.Controllers
         /// <param name="change"><see cref="PasswordModel"/></param>
         /// <returns>Action result with status code 204 "No content".</returns>
         /// <example>
-        /// PUT: api/v1/user/changepassword/1
+        /// PUT: api/v1/users/changepassword/1
         /// {
         ///   "oldPassword": "deerEatRabbits?",
         ///   "newPassword": "notUsually."
@@ -161,7 +201,7 @@ namespace FligthNode.Identity.Services.Controllers
         /// <param name="user"><see cref="UserModel"/></param>
         /// <returns>Action result with status code 204 "No content".</returns>
         /// <example>
-        /// PUT: /api/v1/user/1
+        /// PUT: /api/v1/users/1
         /// {
         ///   "userId": 1,
         ///   "userName": "dirigible@asfddfsdfs.com",
@@ -196,6 +236,8 @@ namespace FligthNode.Identity.Services.Controllers
                 }
 
                 return NoContent();
+
+                // TODO: return NotFound() if the user doesn't exist
             });
         }
 
@@ -206,7 +248,7 @@ namespace FligthNode.Identity.Services.Controllers
         /// <param name="id">User Id</param>
         /// <returns>Action result with status code 204 "No content".</returns>
         /// <example>
-        /// DELETE: api/v1/User/1
+        /// DELETE: api/v1/users/1
         /// </example>
         [Authorize(Roles = "Administrator, Coordinator")]
         public IHttpActionResult Delete(int id)
@@ -222,7 +264,7 @@ namespace FligthNode.Identity.Services.Controllers
         /// </summary>
         /// <returns>Action result containing an enumeration of <see cref="SimpleListItem"/></returns>
         /// <example>
-        /// GET: /api/v1/worktypes/simple
+        /// GET: /api/v1/users/simplelist
         /// </example>
         [Authorize]
         [Route("api/v1/users/simplelist")]
@@ -240,6 +282,8 @@ namespace FligthNode.Identity.Services.Controllers
                 });
 
                 return Ok(models);
+
+                // TODO: return NotFound() if the user doesn't exist
             });
         }
     }

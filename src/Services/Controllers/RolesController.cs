@@ -32,7 +32,6 @@ namespace FlightNode.Identity.Services.Controllers
         /// Retrieves all roles
         /// </summary>
         /// <returns>Action Result with a collection of <see cref="RoleModel"/></returns>
-        [Authorize(Roles = "Administrator, Coordinator")]
         public IHttpActionResult Get()
         {
             return WrapWithTryCatch(() =>

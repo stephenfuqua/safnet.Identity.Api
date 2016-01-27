@@ -28,7 +28,7 @@ namespace FlightNode.Identity.Domain.Logic
         public IEnumerable<UserModel> FindAll()
         {
             return _userManager.Users
-                .Where(x => x.Active)
+                .Where(x => x.Active == ACTIVE)
                 .ToList()
                 .Select(Map);   
         }
@@ -59,7 +59,9 @@ namespace FlightNode.Identity.Domain.Logic
                 UserId = input.Id,
                 UserName = input.UserName,
                 GivenName = input.GivenName,
-                FamilyName = input.FamilyName
+                FamilyName = input.FamilyName,
+                LockedOut = input.LockoutEnabled,
+                Active = input.Active
             };
         }
         
@@ -83,6 +85,7 @@ namespace FlightNode.Identity.Domain.Logic
             record.UserName = input.UserName;
             record.GivenName = input.GivenName;
             record.FamilyName = input.FamilyName;
+            record.Active = input.Active;
 
             var result = _userManager.UpdateAsync(record).Result;
             if (result.Succeeded)
@@ -143,13 +146,14 @@ namespace FlightNode.Identity.Domain.Logic
         {
             return new User
             {
-                Active = true,
+                Active = ACTIVE,
                 Email = input.Email,
                 FamilyName = input.FamilyName,
                 GivenName = input.GivenName,
                 MobilePhoneNumber = input.SecondaryPhoneNumber,
                 PhoneNumber = input.PrimaryPhoneNumber,
-                UserName = input.UserName
+                UserName = input.UserName,
+                LockoutEnabled = input.LockedOut
             };
         }
 
@@ -171,5 +175,7 @@ namespace FlightNode.Identity.Domain.Logic
                 throw UserException.FromMultipleMessages(result.Errors);
             }
         }
+
+        private const string ACTIVE = "active";
     }
 }

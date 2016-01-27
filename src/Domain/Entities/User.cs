@@ -9,7 +9,7 @@ namespace FlightNode.Identity.Domain.Entities
 {
     public class User : IdentityUser<int, UserLogin, UserRole, UserClaim>, IEntity
     {
-        public bool Active { get; set; }
+        public string Active { get; set; }
 
         [DataType(DataType.PhoneNumber)]
         public string MobilePhoneNumber { get; set; }
@@ -26,7 +26,7 @@ namespace FlightNode.Identity.Domain.Entities
 
         public User()
         {
-            Active = true;
+            Active = "inactive";
         }
 
         /// <summary>
