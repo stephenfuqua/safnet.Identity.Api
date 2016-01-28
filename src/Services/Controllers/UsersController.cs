@@ -7,6 +7,7 @@ using FlightNode.Identity.Services.Models;
 using FligthNode.Common.Api.Controllers;
 using Flurl;
 using Microsoft.AspNet.Identity.Owin;
+using Microsoft.AspNet.Identity;
 using System;
 using System.Linq;
 using System.Web;
@@ -169,7 +170,7 @@ namespace FligthNode.Identity.Services.Controllers
         /// <param name="change"><see cref="PasswordModel"/></param>
         /// <returns>Action result with status code 204 "No content".</returns>
         /// <example>
-        /// PUT: api/v1/users/changepassword/1
+        /// PUT: api/v1/users/1/changepassword
         /// {
         ///   "oldPassword": "deerEatRabbits?",
         ///   "newPassword": "notUsually."
@@ -177,7 +178,7 @@ namespace FligthNode.Identity.Services.Controllers
         /// </example>
         [HttpPut]
         [Authorize(Roles = "Administrator, Coordinator")]
-        [Route("api/v1/user/changepassword/{id:int}")]
+        [Route("api/v1/users/{id:int}/changepassword")]
         public IHttpActionResult ChangePassword(int id, [FromBody]PasswordModel change)
         {
             if (!ModelState.IsValid)
@@ -186,8 +187,8 @@ namespace FligthNode.Identity.Services.Controllers
             }
             return WrapWithTryCatch(() =>
             {
-                var userManager = HttpContext.Current.GetOwinContext().GetUserManager<AppUserManager>();
-                userManager.ChangePasswordAsync(id, change.CurrentPassword, change.NewPassword);
+                UserDomainManager domainManager = GetTokenConfiguredManager();
+                domainManager.ChangePassword(id, change);
 
                 return NoContent();
             });
@@ -220,6 +221,11 @@ namespace FligthNode.Identity.Services.Controllers
             {
                 return BadRequest(ModelState);
             }
+            return Update(id, user);
+        }
+
+        private IHttpActionResult Update(int id, UserModel user)
+        {
             return WrapWithTryCatch(() =>
             {
                 // For safety, override the message body's id with the input value
@@ -228,19 +234,72 @@ namespace FligthNode.Identity.Services.Controllers
 
                 if (!string.IsNullOrWhiteSpace(user.Password))
                 {
-                    // TODO: check on back-end validation of the password complexity
-
-                    var userManager = HttpContext.Current.GetOwinContext().GetUserManager<AppUserManager>();
-                    var domainManager = new UserDomainManager(userManager);
-                    domainManager.AdministrativePasswordChange(id, user.Password);
+                    UserDomainManager domainManager = GetTokenConfiguredManager();
+                    domainManager.AdministrativePasswordChange(user.UserId, user.Password);
                 }
 
                 return NoContent();
-
-                // TODO: return NotFound() if the user doesn't exist
             });
         }
 
+        /// <summary>
+        /// A function to retrieve a <see cref="UserDomainManager"/> that can handle password changes
+        /// </summary>
+        /// <remarks>
+        /// For unit testing, set this static function to a different, "mock", lambda expression.
+        /// </remarks>
+        public static Func<UserDomainManager> GetTokenConfiguredManager = () =>
+        {
+            // The _manager instance is not setup for token encryption. Retrieve the 
+            // Owin-context version in order to reset a password
+            var userManager = HttpContext.Current.GetOwinContext().GetUserManager<AppUserManager>();
+            var domainManager = new UserDomainManager(userManager);
+            return domainManager;
+        };
+
+
+        /// <summary>
+        /// Allows a user to update his/her own record
+        /// </summary>
+        /// <param name="id">User Id</param>
+        /// <param name="user"><see cref="UserModel"/></param>
+        /// <returns>Action result with status code 204 "No content".</returns>
+        /// <example>
+        /// PUT: /api/v1/users/1/profile
+        /// {
+        ///   "userId": 1,
+        ///   "userName": "dirigible@asfddfsdfs.com",
+        ///   "givenName": "Juana",
+        ///   "familyName": "Coneja",
+        ///   "email": "dirigible@asfddfsdfs.com",
+        ///   "phoneNumber": "555-555-5555",
+        ///   "mobilePhoneNumber": "(555) 555-5554",
+        ///   "password": "will be set since this is not blank"
+        /// }
+        /// </example>
+        [Authorize]
+        [Route("api/v1/users/{id:int}/profile")]
+        [HttpPut]
+        public IHttpActionResult Profile(int id, [FromBody]UserModel user)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            // Do not allow manipulation into someone else's userId
+            if(id != RetrieveCurrentUserId())
+            {
+                return BadRequest();
+            }
+
+            return Update(id, user);
+        }
+
+        private int RetrieveCurrentUserId()
+        {
+            return User.Identity.GetUserId<int>();
+        }
 
         /// <summary>
         /// Soft-deletes (deactivates) a user from the system.

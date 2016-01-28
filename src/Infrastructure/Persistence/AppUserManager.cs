@@ -4,8 +4,6 @@ using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.Owin;
 using Microsoft.Owin;
 using System;
-using System.Collections.Generic;
-using System.Linq.Expressions;
 using System.Threading.Tasks;
 
 namespace FlightNode.Identity.Infrastructure.Persistence
@@ -23,42 +21,30 @@ namespace FlightNode.Identity.Infrastructure.Persistence
         {
             var manager = new AppUserManager(new AppUserStore(context.Get<IdentityDbContext>()));
 
-            // Configure validation logic for usernames 
-            manager.UserValidator = new UserValidator<User, int>(manager)
-            {
-                AllowOnlyAlphanumericUserNames = false,
-                RequireUniqueEmail = true
-            };
-
-            // Configure validation logic for passwords 
-            manager.PasswordValidator = new PasswordValidator
-            {
-                RequiredLength = 6,
-                RequireNonLetterOrDigit = true,
-                RequireDigit = true,
-                RequireLowercase = true,
-                RequireUppercase = true,
-            };
-
-            // Configure user lockout defaults
-            manager.UserLockoutEnabledByDefault = true;
-            manager.DefaultAccountLockoutTimeSpan = TimeSpan.FromMinutes(5);
-            manager.MaxFailedAccessAttemptsBeforeLockout = 5;
+            manager = ConfigureUsernameValidation(manager);
+            manager = ConfigurePasswordValidation(manager);
+            manager = ConfigureLockout(manager);
 
             // Two-factor authenticadtion
-            manager.RegisterTwoFactorProvider("EmailCode",
-                new EmailTokenProvider<User, int>
-                {
-                    // TODO: subject should not be hard-coded to FlightNode. Need to be flexible
-                    // enough to handle the project name.
-                    Subject = "FlightNode Security Code",
-                    BodyFormat = "Your security code is: {0}"
-                });
+            //manager.RegisterTwoFactorProvider("EmailCode",
+            //    new EmailTokenProvider<User, int>
+            //    {
+            //        // TODO: subject should not be hard-coded to FlightNode. Need to be flexible
+            //        // enough to handle the project name.
+            //        Subject = "FlightNode Security Code",
+            //        BodyFormat = "Your security code is: {0}"
+            //    });
 
-            manager.EmailService = new EmailService();
+            //manager.EmailService = new EmailService();
 
 
+            manager = ConfigureTokenProvider(options, manager);
 
+            return manager;
+        }
+
+        private static AppUserManager ConfigureTokenProvider(IdentityFactoryOptions<AppUserManager> options, AppUserManager manager)
+        {
             var dataProtectionProvider = options.DataProtectionProvider;
             if (dataProtectionProvider != null)
             {
@@ -68,15 +54,46 @@ namespace FlightNode.Identity.Infrastructure.Persistence
             }
             return manager;
         }
-    }
 
-
-    public class EmailService : IIdentityMessageService
-    {
-        public Task SendAsync(IdentityMessage message)
+        private static AppUserManager ConfigureLockout(AppUserManager manager)
         {
-            // TODO: Plug in your email service here to send an email.
-            return Task.FromResult(0);
+            manager.UserLockoutEnabledByDefault = true;
+            manager.DefaultAccountLockoutTimeSpan = TimeSpan.FromMinutes(5);
+            manager.MaxFailedAccessAttemptsBeforeLockout = 5;
+            return manager;
+        }
+
+        private static AppUserManager ConfigurePasswordValidation(AppUserManager manager)
+        {
+            manager.PasswordValidator = new PasswordValidator
+            {
+                RequiredLength = 6,
+                RequireNonLetterOrDigit = true,
+                RequireDigit = true,
+                RequireLowercase = true,
+                RequireUppercase = true,
+            };
+            return manager;
+        }
+
+        private static AppUserManager ConfigureUsernameValidation(AppUserManager manager)
+        {
+            manager.UserValidator = new UserValidator<User, int>(manager)
+            {
+                AllowOnlyAlphanumericUserNames = false,
+                RequireUniqueEmail = true
+            };
+            return manager;
         }
     }
+
+
+    //public class EmailService : IIdentityMessageService
+    //{
+    //    public Task SendAsync(IdentityMessage message)
+    //    {
+    //        // TODO: Plug in your email service here to send an email.
+    //        return Task.FromResult(0);
+    //    }
+    //}
 }

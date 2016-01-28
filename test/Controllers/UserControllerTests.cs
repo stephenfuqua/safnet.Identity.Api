@@ -211,5 +211,14 @@ namespace FlightNode.Identity.UnitTests.Controllers
                 }
             }
         }
+
+        public class Put
+        {
+            public class HappyPath
+            {
+                //[Fact]
+                //public void Confirm
+            }
+        }
     }
 }

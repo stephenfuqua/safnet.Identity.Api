@@ -384,7 +384,7 @@ namespace FlightNode.Identity.UnitTests.Domain.Logic
                 const string userName = "asdfasd";
                 const string mobileNumber = "(555) 555-5554";
                 const bool lockedOut = true;
-                const string active = "active";
+                const string active = "inactive";
 
                 private IEnumerable<UserModel> RunTheTest()
                 {

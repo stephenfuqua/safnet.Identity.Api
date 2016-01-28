@@ -86,6 +86,7 @@ namespace FlightNode.Identity.Domain.Logic
             record.GivenName = input.GivenName;
             record.FamilyName = input.FamilyName;
             record.Active = input.Active;
+            record.LockoutEnabled = input.LockedOut;
 
             var result = _userManager.UpdateAsync(record).Result;
             if (result.Succeeded)
@@ -146,7 +147,7 @@ namespace FlightNode.Identity.Domain.Logic
         {
             return new User
             {
-                Active = ACTIVE,
+                Active = input.Active,
                 Email = input.Email,
                 FamilyName = input.FamilyName,
                 GivenName = input.GivenName,
