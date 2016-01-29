@@ -1,5 +1,4 @@
-﻿
-using FlightNode.Common.Api.Models;
+﻿using FlightNode.Common.Api.Models;
 using FlightNode.Identity.Domain.Interfaces;
 using FlightNode.Identity.Domain.Logic;
 using FlightNode.Identity.Infrastructure.Persistence;
@@ -12,6 +11,7 @@ using System;
 using System.Linq;
 using System.Web;
 using System.Web.Http;
+using System.Collections.Generic;
 
 namespace FligthNode.Identity.Services.Controllers
 {
@@ -21,6 +21,31 @@ namespace FligthNode.Identity.Services.Controllers
     public class UsersController : LoggingController
     {
         private readonly IUserDomainManager _manager;
+
+        private IUserDomainManager _managerWithTokenSetup;
+
+        /// <summary>
+        /// A property to retrieve a <see cref="IUserDomainManager"/> that can handle password changes.
+        /// </summary>
+        /// <remarks>
+        /// Can be set by a unit test. This is a bit ugly, but the best I can come up with for now.
+        /// </remarks>
+        protected IUserDomainManager ManagerWithTokenSetup
+        {
+            get
+            {
+                if (_managerWithTokenSetup == null)
+                {
+                    var userManager = HttpContext.Current.GetOwinContext().GetUserManager<AppUserManager>();
+                    _managerWithTokenSetup = new UserDomainManager(userManager);
+                }
+                return _managerWithTokenSetup;
+            }
+            set
+            {
+                _managerWithTokenSetup = value;
+            }
+        }
 
         /// <summary>
         /// Creates a new instance of <see cref="UsersController"/>
@@ -112,14 +137,7 @@ namespace FligthNode.Identity.Services.Controllers
 
             return WrapWithTryCatch(() =>
             {
-
-                var result = _manager.Create(user);
-
-                var location = Request.RequestUri
-                                      .ToString()
-                                      .AppendPathSegment(result.UserId.ToString());
-
-                return Created(location, result);
+                return Create(user);
             });
         }
 
@@ -150,17 +168,24 @@ namespace FligthNode.Identity.Services.Controllers
 
             return WrapWithTryCatch(() =>
             {
+                // Don't trust the client to provide these three important values!
                 user.LockedOut = true;
                 user.Active = "pending";
+                user.Roles = new List<string>(){ "Reporter" };
 
-                var result = _manager.Create(user);
-
-                var location = Request.RequestUri
-                                      .ToString()
-                                      .AppendPathSegment(result.UserId.ToString());
-
-                return Created(location, result);
+                return Create(user);
             });
+        }
+
+        private IHttpActionResult Create(UserModel user)
+        {
+            var result = _manager.Create(user);
+
+            var location = Request.RequestUri
+                                  .ToString()
+                                  .AppendPathSegment(result.UserId.ToString());
+
+            return Created(location, result);
         }
 
         /// <summary>
@@ -187,7 +212,7 @@ namespace FligthNode.Identity.Services.Controllers
             }
             return WrapWithTryCatch(() =>
             {
-                UserDomainManager domainManager = GetTokenConfiguredManager();
+                var domainManager = ManagerWithTokenSetup;
                 domainManager.ChangePassword(id, change);
 
                 return NoContent();
@@ -234,28 +259,13 @@ namespace FligthNode.Identity.Services.Controllers
 
                 if (!string.IsNullOrWhiteSpace(user.Password))
                 {
-                    UserDomainManager domainManager = GetTokenConfiguredManager();
+                    var domainManager = ManagerWithTokenSetup;
                     domainManager.AdministrativePasswordChange(user.UserId, user.Password);
                 }
 
                 return NoContent();
             });
         }
-
-        /// <summary>
-        /// A function to retrieve a <see cref="UserDomainManager"/> that can handle password changes
-        /// </summary>
-        /// <remarks>
-        /// For unit testing, set this static function to a different, "mock", lambda expression.
-        /// </remarks>
-        public static Func<UserDomainManager> GetTokenConfiguredManager = () =>
-        {
-            // The _manager instance is not setup for token encryption. Retrieve the 
-            // Owin-context version in order to reset a password
-            var userManager = HttpContext.Current.GetOwinContext().GetUserManager<AppUserManager>();
-            var domainManager = new UserDomainManager(userManager);
-            return domainManager;
-        };
 
 
         /// <summary>
@@ -286,6 +296,8 @@ namespace FligthNode.Identity.Services.Controllers
             {
                 return BadRequest(ModelState);
             }
+
+            // TODO: disallow editing of roles
 
             // Do not allow manipulation into someone else's userId
             if(id != RetrieveCurrentUserId())
