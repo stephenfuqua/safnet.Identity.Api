@@ -16,7 +16,7 @@ namespace FlightNode.Identity.Services.Models
         /// <summary>
         /// E-mail Address
         /// </summary>
-        [EmailAddress]
+        [RegularExpression(".+@.+\\..+")] // getting e-mails right is hard. Just ensure has some text at symbol a domain and a TLD.
         [Required]
         public string Email { get; set; }
 
@@ -24,6 +24,7 @@ namespace FlightNode.Identity.Services.Models
         /// Primary Phone Number
         /// </summary>
         [Phone]
+        [Required]
         [StringLength(256)]
         public string PrimaryPhoneNumber { get; set; }
 
