@@ -12,6 +12,9 @@ namespace FlightNode.Identity.Domain.Logic
 
     public class UserDomainManager : DomainLogic, IUserDomainManager
     {
+        private const string STATUS_ACTIVE = "active";
+        private const string STATUS_PENDING = "pending";
+
         private Interfaces.IUserPersistence _userManager;
 
         public UserDomainManager(Interfaces.IUserPersistence manager)
@@ -24,13 +27,28 @@ namespace FlightNode.Identity.Domain.Logic
             _userManager = manager;
         }
 
-        
+
         public IEnumerable<UserModel> FindAll()
         {
             return _userManager.Users
-                .Where(x => x.Active == ACTIVE)
+                .Where(x => x.Active == STATUS_ACTIVE)
                 .ToList()
-                .Select(Map);   
+                .Select(Map);
+        }
+
+        public IEnumerable<PendingUserModel> FindAllPending()
+        {
+            return _userManager.Users
+                .Where(x => x.Active == STATUS_PENDING)
+                .ToList()
+                .Select(x => new PendingUserModel
+                {
+                    DisplayName = x.DisplayName,
+                    Email = x.Email,
+                    PrimaryPhoneNumber = x.PhoneNumber,
+                    SecondaryPhoneNumber = x.MobilePhoneNumber,
+                    UserId = x.Id
+                });
         }
 
         public UserModel FindById(int id)
@@ -64,8 +82,8 @@ namespace FlightNode.Identity.Domain.Logic
                 Active = input.Active
             };
         }
-        
-        
+
+
         public void Update(UserModel input)
         {
             if (input == null)
@@ -103,7 +121,7 @@ namespace FlightNode.Identity.Domain.Logic
                 {
                     throw UserException.FromMultipleMessages(result.Errors);
                 }
-            }           
+            }
             else
             {
                 throw UserException.FromMultipleMessages(result.Errors);
@@ -177,6 +195,26 @@ namespace FlightNode.Identity.Domain.Logic
             }
         }
 
-        private const string ACTIVE = "active";
+        public void Approve(List<int> ids)
+        {
+            if (ids == null)
+            {
+                throw new ArgumentNullException("ids");
+            }
+
+            foreach (var id in ids)
+            {
+                var user = _userManager.FindByIdAsync(id).Result;
+
+                if (user != null)
+                {
+                    user.Active = STATUS_ACTIVE;
+
+                    var updateResult = _userManager.UpdateAsync(user).Result;
+                }
+                // Ignore else case - likely implies some manipulation of the input.
+                // Otherwise, doesn't really matter. The record will show up in the list again.
+            }
+        }
     }
 }

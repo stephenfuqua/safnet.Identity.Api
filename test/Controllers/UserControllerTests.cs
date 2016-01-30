@@ -180,6 +180,157 @@ namespace FlightNode.Identity.UnitTests.Controllers
             }
         }
 
+        public class Pending : Fixture
+        {
+            protected HttpResponseMessage RunTest(List<PendingUserModel> expectedResult)
+            {
+                MockManager.Setup(x => x.FindAllPending())
+                    .Returns(expectedResult);
+                return BuildSystem().Pending().ExecuteAsync(new System.Threading.CancellationToken()).Result;
+            }
+
+            public class HappyPath : Pending
+            {
+                private List<PendingUserModel> list = new List<PendingUserModel>
+                {
+                    new PendingUserModel()
+                };
+
+
+                [Fact]
+                public void ConfirmHappyPathContent()
+                {
+                    Assert.Same(list.First(), RunTest(list).Content.ReadAsAsync<List<PendingUserModel>>().Result.First());
+                }
+
+                [Fact]
+                public void ConfirmHappyPathStatusCode()
+                {
+                    Assert.Equal(HttpStatusCode.OK, RunTest(list).StatusCode);
+                }
+            }
+
+            public class NoRecords : Pending
+            {
+
+                [Fact]
+                public void ConfirmNotFoundStatusCode()
+                {
+                    Assert.Equal(HttpStatusCode.NotFound, RunTest(new List<PendingUserModel>()).StatusCode);
+                }
+            }
+
+            public class ExceptionHandling : Fixture
+            {
+
+                private HttpResponseMessage RunTest(Exception ex)
+                {
+                    MockManager.Setup(x => x.FindAllPending())
+                        .Throws(ex);
+
+
+                    return BuildSystem().Pending().ExecuteAsync(new System.Threading.CancellationToken()).Result;
+                }
+
+                [Fact]
+                public void ConfirmHandlingOfInvalidOperation()
+                {
+                    MockLogger.Setup(x => x.Error(It.IsAny<Exception>()));
+
+                    var e = new InvalidOperationException();
+                    Assert.Equal(HttpStatusCode.InternalServerError, RunTest(e).StatusCode);
+                }
+
+                [Fact]
+                public void ConfirmHandlingOfServerError()
+                {
+                    MockLogger.Setup(x => x.Error(It.IsAny<Exception>()));
+
+                    var e = ServerException.HandleException<ExceptionHandling>(new Exception(), "asdf");
+                    Assert.Equal(HttpStatusCode.InternalServerError, RunTest(e).StatusCode);
+                }
+
+                [Fact]
+                public void ConfirmHandlingOfUserError()
+                {
+                    MockLogger.Setup(x => x.Debug(It.IsAny<Exception>()));
+
+                    var e = new UserException("asdf");
+                    Assert.Equal(HttpStatusCode.BadRequest, RunTest(e).StatusCode);
+                }
+            }
+        }
+
+        public class Approve : Fixture
+        {
+            protected HttpResponseMessage RunTest(List<int> ids)
+            {
+                MockManager.Setup(x => x.Approve(It.IsAny<List<int>>()))
+                    .Callback((List<int> actual) =>
+                    {
+                        Assert.Same(ids, actual);
+                    });
+                return BuildSystem().Approve(ids).ExecuteAsync(new System.Threading.CancellationToken()).Result;
+            }
+
+            public class HappyPath : Approve
+            {
+                [Fact]
+                public void ConfirmReturnsNoContent()
+                {
+                    //
+                    // Arrange
+                    var ids = new List<int>() { 1, 2 };
+
+                    //
+                    // Act
+                    var result = RunTest(ids);
+
+                    //
+                    // Assert
+                    Assert.Equal(HttpStatusCode.NoContent, result.StatusCode);
+                }
+            }
+
+            public class ErrorHandling : Approve
+            {
+
+                private HttpResponseMessage RunTest(Exception ex)
+                {
+                    MockManager.Setup(x => x.Approve(It.IsAny<List<int>>()))
+                            .Throws(ex);
+                    return BuildSystem().Approve(new List<int>()).ExecuteAsync(new System.Threading.CancellationToken()).Result;
+                }
+
+                [Fact]
+                public void ConfirmHandlingOfInvalidOperation()
+                {
+                    MockLogger.Setup(x => x.Error(It.IsAny<Exception>()));
+
+                    var e = new InvalidOperationException();
+                    Assert.Equal(HttpStatusCode.InternalServerError, RunTest(e).StatusCode);
+                }
+
+                [Fact]
+                public void ConfirmHandlingOfServerError()
+                {
+                    MockLogger.Setup(x => x.Error(It.IsAny<Exception>()));
+
+                    var e = ServerException.HandleException<ErrorHandling>(new Exception(), "asdf");
+                    Assert.Equal(HttpStatusCode.InternalServerError, RunTest(e).StatusCode);
+                }
+
+                [Fact]
+                public void ConfirmHandlingOfUserError()
+                {
+                    MockLogger.Setup(x => x.Debug(It.IsAny<Exception>()));
+
+                    var e = new UserException("asdf");
+                    Assert.Equal(HttpStatusCode.BadRequest, RunTest(e).StatusCode);
+                }
+            }
+        }
+
         public class Put : Fixture
         {
             private HttpResponseMessage RunTest(int id, UserModel input)

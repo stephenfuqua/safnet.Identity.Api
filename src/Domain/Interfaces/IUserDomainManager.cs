@@ -11,6 +11,8 @@ namespace FlightNode.Identity.Domain.Interfaces
         void Update(UserModel input);
         void ChangePassword(int id, PasswordModel change);
         void AdministrativePasswordChange(int userId, string newPassword);
+        IEnumerable<PendingUserModel> FindAllPending();
+        void Approve(List<int> list);
     }
 
 }

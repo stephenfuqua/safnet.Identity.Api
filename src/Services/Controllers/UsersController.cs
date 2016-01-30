@@ -111,6 +111,66 @@ namespace FligthNode.Identity.Services.Controllers
         }
 
         /// <summary>
+        /// Retrieves new users whose activation is pending.
+        /// </summary>
+        /// <returns>
+        /// Action result containing <see cref="PendingUserModel"/> records.
+        /// </returns>
+        /// <example>
+        /// GET: /api/v1/users/pending
+        /// [
+        ///   {
+        ///     "userId": 34234,
+        ///     "displayName": "Juana Coneja",
+        ///     "email": "dirigible@asfddfsdfs.com",
+        ///     "primaryPhoneNumber": "555-555-5555",
+        ///     "secondaryPhoneNumber": "(555) 555-5554",
+        ///   }
+        /// ]
+        /// </example>
+        [Route("api/v1/users/pending")]
+        [Authorize(Roles = "Administrator, Coordinator")]
+        [HttpGet]
+        public IHttpActionResult Pending()
+        {
+            return WrapWithTryCatch(() =>
+            {
+                var result = _manager.FindAllPending();
+                if (result != null && result.Any())
+                {
+                    return Ok(result);
+                }
+                else
+                {
+                    return NotFound();
+                }
+            });
+        }
+
+        /// <summary>
+        /// Updates the registration status to "active" for the input User Id values.
+        /// </summary>
+        /// <param name="ids">List of ID values.</param>
+        /// <returns>
+        /// Action result with no content
+        /// </returns>
+        /// <example>
+        /// POST /api/v1/users/pending
+        /// [ 1, 2 ]
+        /// </example>
+        [Route("api/v1/users/pending")]
+        [Authorize(Roles = "Administrator, Coordinator")]
+        [HttpPost]
+        public IHttpActionResult Approve([FromBody]List<int> ids)
+        {
+            return WrapWithTryCatch(() =>
+            {
+                _manager.Approve(ids);
+                return NoContent();
+            });
+        }
+
+        /// <summary>
         /// Adds a new user to the system.
         /// </summary>
         /// <param name="user"><see cref="UserModel"/></param>

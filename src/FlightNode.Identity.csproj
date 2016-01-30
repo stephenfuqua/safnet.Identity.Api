@@ -72,6 +72,8 @@
     </Compile>
     <Compile Include="Services\Controllers\RolesController.cs" />
     <Compile Include="Services\Controllers\UsersController.cs" />
+    <Compile Include="Services\Models\IdList.cs" />
+    <Compile Include="Services\Models\PendingUserModel.cs" />
     <Compile Include="Services\Models\RoleModel.cs" />
     <Compile Include="Services\Providers\ApiStartup.cs" />
     <Compile Include="Services\Providers\JwtFormat.cs" />
