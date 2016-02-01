@@ -214,9 +214,9 @@ namespace FlightNode.Identity.UnitTests.Controllers
             {
 
                 [Fact]
-                public void ConfirmNotFoundStatusCode()
+                public void ConfirmReturnsOk()
                 {
-                    Assert.Equal(HttpStatusCode.NotFound, RunTest(new List<PendingUserModel>()).StatusCode);
+                    Assert.Equal(HttpStatusCode.OK, RunTest(new List<PendingUserModel>()).StatusCode);
                 }
             }
 
@@ -532,7 +532,7 @@ namespace FlightNode.Identity.UnitTests.Controllers
                 var system = BuildSystem();
                 system.User = principal.Object;
                 
-                return system.Profile(id, input).ExecuteAsync(new System.Threading.CancellationToken()).Result;
+                return system.PutProfile(id, input).ExecuteAsync(new System.Threading.CancellationToken()).Result;
             }
 
 
@@ -741,77 +741,13 @@ namespace FlightNode.Identity.UnitTests.Controllers
             public class HappyPath : Register
             {
                 [Fact]
-                public void ConfirmOverridesRoleToReporterOnly()
-                {
-                    //
-                    // Arrange
-                    var user = new UserModel();
-
-                    MockManager.Setup(x => x.Create(It.IsAny<UserModel>()))
-                        .Callback((UserModel actual) =>
-                        {
-                            Assert.Equal(1, actual.Roles.Count());
-                            Assert.Equal("Reporter", actual.Roles[0]);
-                        })
-                        .Returns(user);
-
-                    //
-                    // Act
-                    RunTest(user);
-
-                    // no additional asserts required
-                }
-
-                [Fact]
-                public void ConfirmSetsLockedOutTrue()
-                {
-                    //
-                    // Arrange
-                    var user = new UserModel();
-
-                    MockManager.Setup(x => x.Create(It.IsAny<UserModel>()))
-                        .Callback((UserModel actual) =>
-                        {
-                            Assert.True(user.LockedOut);
-                        })
-                        .Returns(user);
-
-                    //
-                    // Act
-                    RunTest(user);
-
-                    // no additional asserts required
-                }
-
-                [Fact]
-                public void ConfirmSetsActiveToPending()
-                {
-                    //
-                    // Arrange
-                    var user = new UserModel();
-
-                    MockManager.Setup(x => x.Create(It.IsAny<UserModel>()))
-                        .Callback((UserModel actual) =>
-                        {
-                            Assert.Equal("pending", actual.Active);
-                        })
-                        .Returns(user);
-
-                    //
-                    // Act
-                    RunTest(user);
-
-                    // no additional asserts required
-                }
-
-                [Fact]
                 public void ConfirmReturnsCreated()
                 {
                     //
                     // Arrange
                     var user = new UserModel();
 
-                    MockManager.Setup(x => x.Create(It.IsAny<UserModel>()))
+                    MockManager.Setup(x => x.CreatePending(It.IsAny<UserModel>()))
                         .Returns(user);
 
                     //
@@ -832,7 +768,7 @@ namespace FlightNode.Identity.UnitTests.Controllers
                     var id = 234234;
                     var user = new UserModel();
 
-                    MockManager.Setup(x => x.Create(It.IsAny<UserModel>()))
+                    MockManager.Setup(x => x.CreatePending(It.IsAny<UserModel>()))
                         .Returns((UserModel modified) =>
                         {
                             modified.UserId = id;
@@ -862,7 +798,7 @@ namespace FlightNode.Identity.UnitTests.Controllers
                     const int id = 33;
                     var user = new UserModel();
 
-                    MockManager.Setup(x => x.Create(It.IsAny<UserModel>()))
+                    MockManager.Setup(x => x.CreatePending(It.IsAny<UserModel>()))
                         .Throws(new UserException("message"));
 
                     ExpectToLogDebugMessage();
@@ -887,7 +823,8 @@ namespace FlightNode.Identity.UnitTests.Controllers
                         Password = "asdfasd"
                     };
 
-                    MockManager.Setup(x => x.Create(It.IsAny<UserModel>()))
+
+                    MockManager.Setup(x => x.CreatePending(It.IsAny<UserModel>()))
                         .Throws(new UserException("message"));
 
                     ExpectToLogDebugMessage();
@@ -914,7 +851,7 @@ namespace FlightNode.Identity.UnitTests.Controllers
                     };
 
 
-                    MockManager.Setup(x => x.Create(It.IsAny<UserModel>()))
+                    MockManager.Setup(x => x.CreatePending(It.IsAny<UserModel>()))
                                                .Throws(CreateValidationException());
 
                     ExpectToLogDebugMessage();

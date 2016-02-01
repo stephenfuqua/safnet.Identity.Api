@@ -8,6 +8,7 @@ namespace FlightNode.Identity.Domain.Interfaces
         IEnumerable<UserModel> FindAll();
         UserModel FindById(int id);
         UserModel Create(UserModel input);
+        UserModel CreatePending(UserModel input);
         void Update(UserModel input);
         void ChangePassword(int id, PasswordModel change);
         void AdministrativePasswordChange(int userId, string newPassword);
