@@ -2,7 +2,8 @@ namespace FlightNode.Identity.Migrations
 {
     using System;
     using System.Data.Entity.Migrations;
-    
+
+    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
     public partial class RoleDescription : DbMigration
     {
         public override void Up()

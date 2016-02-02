@@ -61,7 +61,7 @@ namespace FligthNode.Identity.Services.Controllers
             _manager = manager;
         }
 
-        
+
         /// <summary>
         /// Retrieves all active system users.
         /// </summary>
@@ -111,6 +111,59 @@ namespace FligthNode.Identity.Services.Controllers
         }
 
         /// <summary>
+        /// Retrieves new users whose activation is pending.
+        /// </summary>
+        /// <returns>
+        /// Action result containing <see cref="PendingUserModel"/> records.
+        /// </returns>
+        /// <example>
+        /// GET: /api/v1/users/pending
+        /// [
+        ///   {
+        ///     "userId": 34234,
+        ///     "displayName": "Juana Coneja",
+        ///     "email": "dirigible@asfddfsdfs.com",
+        ///     "primaryPhoneNumber": "555-555-5555",
+        ///     "secondaryPhoneNumber": "(555) 555-5554",
+        ///   }
+        /// ]
+        /// </example>
+        [Route("api/v1/users/pending")]
+        [Authorize(Roles = "Administrator, Coordinator")]
+        [HttpGet]
+        public IHttpActionResult Pending()
+        {
+            return WrapWithTryCatch(() =>
+            {
+                var result = _manager.FindAllPending() ?? new List<PendingUserModel>();
+                return Ok(result);
+            });
+        }
+
+        /// <summary>
+        /// Updates the registration status to "active" for the input User Id values.
+        /// </summary>
+        /// <param name="ids">List of ID values.</param>
+        /// <returns>
+        /// Action result with no content
+        /// </returns>
+        /// <example>
+        /// POST /api/v1/users/pending
+        /// [ 1, 2 ]
+        /// </example>
+        [Route("api/v1/users/pending")]
+        [Authorize(Roles = "Administrator, Coordinator")]
+        [HttpPost]
+        public IHttpActionResult Approve([FromBody]List<int> ids)
+        {
+            return WrapWithTryCatch(() =>
+            {
+                _manager.Approve(ids);
+                return NoContent();
+            });
+        }
+
+        /// <summary>
         /// Adds a new user to the system.
         /// </summary>
         /// <param name="user"><see cref="UserModel"/></param>
@@ -137,7 +190,8 @@ namespace FligthNode.Identity.Services.Controllers
 
             return WrapWithTryCatch(() =>
             {
-                return Create(user);
+                var result = _manager.Create(user);
+                return Created(user);
             });
         }
 
@@ -168,19 +222,13 @@ namespace FligthNode.Identity.Services.Controllers
 
             return WrapWithTryCatch(() =>
             {
-                // Don't trust the client to provide these three important values!
-                user.LockedOut = true;
-                user.Active = "pending";
-                user.Roles = new List<string>(){ "Reporter" };
-
-                return Create(user);
+                var result = _manager.CreatePending(user);
+                return Created(result);
             });
         }
 
-        private IHttpActionResult Create(UserModel user)
+        private IHttpActionResult Created(UserModel result)
         {
-            var result = _manager.Create(user);
-
             var location = Request.RequestUri
                                   .ToString()
                                   .AppendPathSegment(result.UserId.ToString());
@@ -236,7 +284,8 @@ namespace FligthNode.Identity.Services.Controllers
         ///   "email": "dirigible@asfddfsdfs.com",
         ///   "phoneNumber": "555-555-5555",
         ///   "mobilePhoneNumber": "(555) 555-5554",
-        ///   "password": "will be set since this is not blank"
+        ///   "password": "will be set since this is not blank",
+        ///   "active": true
         /// }
         /// </example>
         [Authorize(Roles = "Administrator, Coordinator")]
@@ -275,7 +324,7 @@ namespace FligthNode.Identity.Services.Controllers
         /// <param name="user"><see cref="UserModel"/></param>
         /// <returns>Action result with status code 204 "No content".</returns>
         /// <example>
-        /// PUT: /api/v1/users/1/profile
+        /// PUT: /api/v1/users/profile/1
         /// {
         ///   "userId": 1,
         ///   "userName": "dirigible@asfddfsdfs.com",
@@ -288,9 +337,9 @@ namespace FligthNode.Identity.Services.Controllers
         /// }
         /// </example>
         [Authorize]
-        [Route("api/v1/users/{id:int}/profile")]
+        [Route("api/v1/users/profile/{id:int}")]
         [HttpPut]
-        public IHttpActionResult Profile(int id, [FromBody]UserModel user)
+        public IHttpActionResult PutProfile(int id, [FromBody]UserModel user)
         {
             if (!ModelState.IsValid)
             {
@@ -300,12 +349,39 @@ namespace FligthNode.Identity.Services.Controllers
             // TODO: disallow editing of roles
 
             // Do not allow manipulation into someone else's userId
-            if(id != RetrieveCurrentUserId())
+            if (id != RetrieveCurrentUserId())
             {
                 return BadRequest();
             }
 
             return Update(id, user);
+        }
+
+
+        /// <summary>
+        /// Retrieves the authenticated user's profile.
+        /// </summary>
+        /// <returns>Action result containing the requested user, or status code 404 "not found".</returns>
+        /// <example>
+        /// GET: /api/v1/users/profile
+        /// Returns:
+        /// {
+        ///   "userId": 1,
+        ///   "userName": "dirigible@asfddfsdfs.com",
+        ///   "givenName": "Juana",
+        ///   "familyName": "Coneja",
+        ///   "email": "dirigible@asfddfsdfs.com",
+        ///   "phoneNumber": "555-555-5555",
+        ///   "mobilePhoneNumber": "(555) 555-5554",
+        ///   "password": "will be set since this is not blank"
+        /// }
+        /// </example>
+        [Authorize]
+        [Route("api/v1/users/profile")]
+        public IHttpActionResult GetProfile()
+        {
+            var id = RetrieveCurrentUserId();
+            return Get(id);
         }
 
         private int RetrieveCurrentUserId()

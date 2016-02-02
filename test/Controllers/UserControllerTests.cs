@@ -93,7 +93,88 @@ namespace FlightNode.Identity.UnitTests.Controllers
                 Assert.Throws<ArgumentNullException>(() => new UsersController(null));
             }
         }
-        
+
+        public class Get : Fixture
+        {
+            private const int USER_ID = 34323;
+            private UserModel user = new UserModel() { UserId = USER_ID };
+
+            protected HttpResponseMessage RunTest(UserModel expected)
+            {
+                MockManager.Setup(x => x.FindById(It.Is<int>(y => y == USER_ID)))
+                    .Returns(expected);
+
+                return BuildSystem().Get(USER_ID).ExecuteAsync(new System.Threading.CancellationToken()).Result;
+            }
+
+            public class HappyPath : Get
+            {
+                [Fact]
+                public void ConfirmHappyPathContent()
+                {
+                    Assert.Same(user, RunTest(user).Content.ReadAsAsync<UserModel>().Result);
+                }
+
+                [Fact]
+                public void ConfirmHappyPathStatusCode()
+                {
+                    Assert.Equal(HttpStatusCode.OK, RunTest(user).StatusCode);
+                }
+            }
+
+            public class NoRecords : Get
+            {
+
+
+                [Fact]
+                public void ConfirmNotFoundStatusCode()
+                {
+                    Assert.Equal(HttpStatusCode.NotFound, RunTest(null).StatusCode);
+                }
+            }
+
+
+            public class ExceptionHandling : Get
+            {
+
+                private HttpResponseMessage RunTest(Exception ex)
+                {
+                    MockManager.Setup(x => x.FindById(It.IsAny<int>()))
+                        .Throws(ex);
+
+
+                    return BuildSystem().Get(0).ExecuteAsync(new System.Threading.CancellationToken()).Result;
+                }
+
+                [Fact]
+                public void ConfirmHandlingOfInvalidOperation()
+                {
+                    MockLogger.Setup(x => x.Error(It.IsAny<Exception>()));
+
+                    var e = new InvalidOperationException();
+                    Assert.Equal(HttpStatusCode.InternalServerError, RunTest(e).StatusCode);
+                }
+
+                [Fact]
+                public void ConfirmHandlingOfServerError()
+                {
+                    MockLogger.Setup(x => x.Error(It.IsAny<Exception>()));
+
+                    var e = ServerException.HandleException<ExceptionHandling>(new Exception(), "asdf");
+                    Assert.Equal(HttpStatusCode.InternalServerError, RunTest(e).StatusCode);
+                }
+
+                [Fact]
+                public void ConfirmHandlingOfUserError()
+                {
+                    MockLogger.Setup(x => x.Debug(It.IsAny<Exception>()));
+
+                    var e = new UserException("asdf");
+                    Assert.Equal(HttpStatusCode.BadRequest, RunTest(e).StatusCode);
+                }
+            }
+        }
+
         public class GetAll
         {
             public class HappyPath : Fixture
@@ -166,6 +247,164 @@ namespace FlightNode.Identity.UnitTests.Controllers
                     MockLogger.Setup(x => x.Error(It.IsAny<Exception>()));
 
                     var e = ServerException.HandleException<ExceptionHandling>(new Exception(), "asdf");
+                    Assert.Equal(HttpStatusCode.InternalServerError, RunTest(e).StatusCode);
+                }
+
+                [Fact]
+                public void ConfirmHandlingOfUserError()
+                {
+                    MockLogger.Setup(x => x.Debug(It.IsAny<Exception>()));
+
+                    var e = new UserException("asdf");
+                    Assert.Equal(HttpStatusCode.BadRequest, RunTest(e).StatusCode);
+                }
+            }
+        }
+
+        public class Pending : Fixture
+        {
+            protected HttpResponseMessage RunTest(List<PendingUserModel> expectedResult)
+            {
+                MockManager.Setup(x => x.FindAllPending())
+                    .Returns(expectedResult);
+                return BuildSystem().Pending().ExecuteAsync(new System.Threading.CancellationToken()).Result;
+            }
+
+            public class HappyPath : Pending
+            {
+                private List<PendingUserModel> list = new List<PendingUserModel>
+                {
+                    new PendingUserModel()
+                };
+
+
+                [Fact]
+                public void ConfirmHappyPathContent()
+                {
+                    Assert.Same(list.First(), RunTest(list).Content.ReadAsAsync<List<PendingUserModel>>().Result.First());
+                }
+
+                [Fact]
+                public void ConfirmHappyPathStatusCode()
+                {
+                    Assert.Equal(HttpStatusCode.OK, RunTest(list).StatusCode);
+                }
+            }
+
+            public class NoRecords : Pending
+            {
+
+                [Fact]
+                public void ConfirmReturnsOk()
+                {
+                    Assert.Equal(HttpStatusCode.OK, RunTest(new List<PendingUserModel>()).StatusCode);
+                }
+
+
+                [Fact]
+                public void EvenNullReturnsOk()
+                {
+                    Assert.Equal(HttpStatusCode.OK, RunTest(null as List<PendingUserModel>).StatusCode);
+                }
+            }
+
+            public class ExceptionHandling : Fixture
+            {
+
+                private HttpResponseMessage RunTest(Exception ex)
+                {
+                    MockManager.Setup(x => x.FindAllPending())
+                        .Throws(ex);
+
+
+                    return BuildSystem().Pending().ExecuteAsync(new System.Threading.CancellationToken()).Result;
+                }
+
+                [Fact]
+                public void ConfirmHandlingOfInvalidOperation()
+                {
+                    MockLogger.Setup(x => x.Error(It.IsAny<Exception>()));
+
+                    var e = new InvalidOperationException();
+                    Assert.Equal(HttpStatusCode.InternalServerError, RunTest(e).StatusCode);
+                }
+
+                [Fact]
+                public void ConfirmHandlingOfServerError()
+                {
+                    MockLogger.Setup(x => x.Error(It.IsAny<Exception>()));
+
+                    var e = ServerException.HandleException<ExceptionHandling>(new Exception(), "asdf");
+                    Assert.Equal(HttpStatusCode.InternalServerError, RunTest(e).StatusCode);
+                }
+
+                [Fact]
+                public void ConfirmHandlingOfUserError()
+                {
+                    MockLogger.Setup(x => x.Debug(It.IsAny<Exception>()));
+
+                    var e = new UserException("asdf");
+                    Assert.Equal(HttpStatusCode.BadRequest, RunTest(e).StatusCode);
+                }
+            }
+        }
+
+        public class Approve : Fixture
+        {
+            protected HttpResponseMessage RunTest(List<int> ids)
+            {
+                MockManager.Setup(x => x.Approve(It.IsAny<List<int>>()))
+                    .Callback((List<int> actual) =>
+                    {
+                        Assert.Same(ids, actual);
+                    });
+                return BuildSystem().Approve(ids).ExecuteAsync(new System.Threading.CancellationToken()).Result;
+            }
+
+            public class HappyPath : Approve
+            {
+                [Fact]
+                public void ConfirmReturnsNoContent()
+                {
+                    //
+                    // Arrange
+                    var ids = new List<int>() { 1, 2 };
+
+                    //
+                    // Act
+                    var result = RunTest(ids);
+
+                    //
+                    // Assert
+                    Assert.Equal(HttpStatusCode.NoContent, result.StatusCode);
+                }
+            }
+
+            public class ErrorHandling : Approve
+            {
+
+                private HttpResponseMessage RunTest(Exception ex)
+                {
+                    MockManager.Setup(x => x.Approve(It.IsAny<List<int>>()))
+                            .Throws(ex);
+                    return BuildSystem().Approve(new List<int>()).ExecuteAsync(new System.Threading.CancellationToken()).Result;
+                }
+
+                [Fact]
+                public void ConfirmHandlingOfInvalidOperation()
+                {
+                    MockLogger.Setup(x => x.Error(It.IsAny<Exception>()));
+
+                    var e = new InvalidOperationException();
+                    Assert.Equal(HttpStatusCode.InternalServerError, RunTest(e).StatusCode);
+                }
+
+                [Fact]
+                public void ConfirmHandlingOfServerError()
+                {
+                    MockLogger.Setup(x => x.Error(It.IsAny<Exception>()));
+
+                    var e = ServerException.HandleException<ErrorHandling>(new Exception(), "asdf");
                     Assert.Equal(HttpStatusCode.InternalServerError, RunTest(e).StatusCode);
                 }
 
@@ -366,6 +605,124 @@ namespace FlightNode.Identity.UnitTests.Controllers
             }
         }
 
+
+        public class ChangePassword : Fixture
+        {
+            protected const int USER_ID = 234;
+            protected const string OLD = "old";
+            protected const string NEW = "new";
+
+
+            protected HttpResponseMessage RunTest()
+            {
+                return BuildSystem().ChangePassword(USER_ID, new PasswordModel { CurrentPassword = OLD, NewPassword = NEW }).ExecuteAsync(new System.Threading.CancellationToken()).Result;
+            }
+
+            public class HappyPath : ChangePassword
+            {
+
+
+                [Fact]
+                public void ConfirmReturnsNoContent()
+                {
+                    //
+                    // Arrange
+                    MockManager.Setup(x => x.ChangePassword(It.IsAny<int>(), It.IsAny<PasswordModel>()));
+
+                    //
+                    // Act
+                    var result = RunTest();
+
+                    //
+                    // Assert
+                    Assert.Equal(HttpStatusCode.NoContent, result.StatusCode);
+                }
+
+                [Fact]
+                public void ConfirmUserId()
+                {
+                    //
+                    // Arrange
+                    MockManager.Setup(x => x.ChangePassword(It.Is<int>(y => y == USER_ID), It.IsAny<PasswordModel>()));
+
+                    //
+                    // Act
+                    var result = RunTest();
+
+                    // no assertions required
+                }
+
+
+                [Fact]
+                public void ConfirmOldPassword()
+                {
+                    //
+                    // Arrange
+                    MockManager.Setup(x => x.ChangePassword(It.IsAny<int>(), It.Is<PasswordModel>(y => y.CurrentPassword == OLD)));
+
+                    //
+                    // Act
+                    var result = RunTest();
+
+                    // no assertions required
+                }
+
+
+                [Fact]
+                public void ConfirmNewdPassword()
+                {
+                    //
+                    // Arrange
+                    MockManager.Setup(x => x.ChangePassword(It.IsAny<int>(), It.Is<PasswordModel>(y => y.NewPassword == NEW)));
+
+                    //
+                    // Act
+                    var result = RunTest();
+
+                    // no assertions required
+                }
+
+            }
+
+            public class ErrorHandling : ChangePassword
+            {
+
+                private HttpResponseMessage RunTest(Exception ex)
+                {
+                    MockManager.Setup(x => x.ChangePassword(It.IsAny<int>(), It.IsAny<PasswordModel>()))
+                            .Throws(ex);
+                    return BuildSystem().ChangePassword(USER_ID, new PasswordModel { CurrentPassword = OLD, NewPassword = NEW }).ExecuteAsync(new System.Threading.CancellationToken()).Result;
+                }
+
+                [Fact]
+                public void ConfirmHandlingOfInvalidOperation()
+                {
+                    MockLogger.Setup(x => x.Error(It.IsAny<Exception>()));
+
+                    var e = new InvalidOperationException();
+                    Assert.Equal(HttpStatusCode.InternalServerError, RunTest(e).StatusCode);
+                }
+
+                [Fact]
+                public void ConfirmHandlingOfServerError()
+                {
+                    MockLogger.Setup(x => x.Error(It.IsAny<Exception>()));
+
+                    var e = ServerException.HandleException<ErrorHandling>(new Exception(), "asdf");
+                    Assert.Equal(HttpStatusCode.InternalServerError, RunTest(e).StatusCode);
+                }
+
+                [Fact]
+                public void ConfirmHandlingOfUserError()
+                {
+                    MockLogger.Setup(x => x.Debug(It.IsAny<Exception>()));
+
+                    var e = new UserException("asdf");
+                    Assert.Equal(HttpStatusCode.BadRequest, RunTest(e).StatusCode);
+                }
+            }
+        }
+
         public class Profile : Fixture
         {
             protected const int LOGGED_IN_USER_ID = -999;
@@ -381,7 +738,7 @@ namespace FlightNode.Identity.UnitTests.Controllers
                 var system = BuildSystem();
                 system.User = principal.Object;
                 
-                return system.Profile(id, input).ExecuteAsync(new System.Threading.CancellationToken()).Result;
+                return system.PutProfile(id, input).ExecuteAsync(new System.Threading.CancellationToken()).Result;
             }
 
 
@@ -590,77 +947,13 @@ namespace FlightNode.Identity.UnitTests.Controllers
             public class HappyPath : Register
             {
                 [Fact]
-                public void ConfirmOverridesRoleToReporterOnly()
-                {
-                    //
-                    // Arrange
-                    var user = new UserModel();
-
-                    MockManager.Setup(x => x.Create(It.IsAny<UserModel>()))
-                        .Callback((UserModel actual) =>
-                        {
-                            Assert.Equal(1, actual.Roles.Count());
-                            Assert.Equal("Reporter", actual.Roles[0]);
-                        })
-                        .Returns(user);
-
-                    //
-                    // Act
-                    RunTest(user);
-
-                    // no additional asserts required
-                }
-
-                [Fact]
-                public void ConfirmSetsLockedOutTrue()
-                {
-                    //
-                    // Arrange
-                    var user = new UserModel();
-
-                    MockManager.Setup(x => x.Create(It.IsAny<UserModel>()))
-                        .Callback((UserModel actual) =>
-                        {
-                            Assert.True(user.LockedOut);
-                        })
-                        .Returns(user);
-
-                    //
-                    // Act
-                    RunTest(user);
-
-                    // no additional asserts required
-                }
-
-                [Fact]
-                public void ConfirmSetsActiveToPending()
-                {
-                    //
-                    // Arrange
-                    var user = new UserModel();
-
-                    MockManager.Setup(x => x.Create(It.IsAny<UserModel>()))
-                        .Callback((UserModel actual) =>
-                        {
-                            Assert.Equal("pending", actual.Active);
-                        })
-                        .Returns(user);
-
-                    //
-                    // Act
-                    RunTest(user);
-
-                    // no additional asserts required
-                }
-
-                [Fact]
                 public void ConfirmReturnsCreated()
                 {
                     //
                     // Arrange
                     var user = new UserModel();
 
-                    MockManager.Setup(x => x.Create(It.IsAny<UserModel>()))
+                    MockManager.Setup(x => x.CreatePending(It.IsAny<UserModel>()))
                         .Returns(user);
 
                     //
@@ -681,7 +974,7 @@ namespace FlightNode.Identity.UnitTests.Controllers
                     var id = 234234;
                     var user = new UserModel();
 
-                    MockManager.Setup(x => x.Create(It.IsAny<UserModel>()))
+                    MockManager.Setup(x => x.CreatePending(It.IsAny<UserModel>()))
                         .Returns((UserModel modified) =>
                         {
                             modified.UserId = id;
@@ -711,7 +1004,7 @@ namespace FlightNode.Identity.UnitTests.Controllers
                     const int id = 33;
                     var user = new UserModel();
 
-                    MockManager.Setup(x => x.Create(It.IsAny<UserModel>()))
+                    MockManager.Setup(x => x.CreatePending(It.IsAny<UserModel>()))
                         .Throws(new UserException("message"));
 
                     ExpectToLogDebugMessage();
@@ -736,7 +1029,8 @@ namespace FlightNode.Identity.UnitTests.Controllers
                         Password = "asdfasd"
                     };
 
-                    MockManager.Setup(x => x.Create(It.IsAny<UserModel>()))
+
+                    MockManager.Setup(x => x.CreatePending(It.IsAny<UserModel>()))
                         .Throws(new UserException("message"));
 
                     ExpectToLogDebugMessage();
@@ -763,7 +1057,7 @@ namespace FlightNode.Identity.UnitTests.Controllers
                     };
 
 
-                    MockManager.Setup(x => x.Create(It.IsAny<UserModel>()))
+                    MockManager.Setup(x => x.CreatePending(It.IsAny<UserModel>()))
                                                .Throws(CreateValidationException());
 
                     ExpectToLogDebugMessage();

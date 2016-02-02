@@ -12,6 +12,10 @@ namespace FlightNode.Identity.Domain.Logic
 
     public class UserDomainManager : DomainLogic, IUserDomainManager
     {
+        private const string STATUS_ACTIVE = "active";
+        private const string STATUS_PENDING = "pending";
+        private const string STATUS_INACTIVE = "inactive";
+
         private Interfaces.IUserPersistence _userManager;
 
         public UserDomainManager(Interfaces.IUserPersistence manager)
@@ -24,13 +28,28 @@ namespace FlightNode.Identity.Domain.Logic
             _userManager = manager;
         }
 
-        
+
         public IEnumerable<UserModel> FindAll()
         {
             return _userManager.Users
-                .Where(x => x.Active == ACTIVE)
+                .Where(x => x.Active == STATUS_ACTIVE)
                 .ToList()
-                .Select(Map);   
+                .Select(Map);
+        }
+
+        public IEnumerable<PendingUserModel> FindAllPending()
+        {
+            return _userManager.Users
+                .Where(x => x.Active == STATUS_PENDING)
+                .ToList()
+                .Select(x => new PendingUserModel
+                {
+                    DisplayName = x.DisplayName,
+                    Email = x.Email,
+                    PrimaryPhoneNumber = x.PhoneNumber,
+                    SecondaryPhoneNumber = x.MobilePhoneNumber,
+                    UserId = x.Id
+                });
         }
 
         public UserModel FindById(int id)
@@ -42,7 +61,7 @@ namespace FlightNode.Identity.Domain.Logic
             output = Map(record);
             if (record.Id > 0)
             {
-                output.Roles = _userManager.GetRolesAsync(id).Result;
+                output.Roles.AddRange(_userManager.GetRolesAsync(id).Result);
             }
 
             return output;
@@ -61,11 +80,11 @@ namespace FlightNode.Identity.Domain.Logic
                 GivenName = input.GivenName,
                 FamilyName = input.FamilyName,
                 LockedOut = input.LockoutEnabled,
-                Active = input.Active
+                Active = input.Active == STATUS_ACTIVE
             };
         }
-        
-        
+
+
         public void Update(UserModel input)
         {
             if (input == null)
@@ -85,7 +104,7 @@ namespace FlightNode.Identity.Domain.Logic
             record.UserName = input.UserName;
             record.GivenName = input.GivenName;
             record.FamilyName = input.FamilyName;
-            record.Active = input.Active;
+            record.Active = input.Active ? STATUS_ACTIVE : STATUS_INACTIVE;
             record.LockoutEnabled = input.LockedOut;
 
             var result = _userManager.UpdateAsync(record).Result;
@@ -103,7 +122,7 @@ namespace FlightNode.Identity.Domain.Logic
                 {
                     throw UserException.FromMultipleMessages(result.Errors);
                 }
-            }           
+            }
             else
             {
                 throw UserException.FromMultipleMessages(result.Errors);
@@ -121,15 +140,35 @@ namespace FlightNode.Identity.Domain.Logic
 
             var record = Map(input);
 
-            var result = _userManager.CreateAsync(record, input.Password).Result;
+            input.UserId = Create(record, input.Roles.ToArray(), input.Password);
+
+            return input;
+        }
+
+        public UserModel CreatePending(UserModel input)
+        {
+            var record = Map(input);
+
+            // Don't trust the client to provide these three important values!
+            record.LockoutEnabled = true;
+            record.Active = "pending";
+            var roles = new [] { "Reporter" };
+
+            input.UserId = Create(record, roles, input.Password);
+
+            return input;
+        }
+
+        private int Create(User record, string[] roles, string password)
+        {
+            var result = _userManager.CreateAsync(record, password).Result;
             if (result.Succeeded)
             {
-                result = _userManager.AddToRolesAsync(record.Id, input.Roles.ToArray()).Result;
+                result = _userManager.AddToRolesAsync(record.Id, roles).Result;
 
                 if (result.Succeeded)
                 {
-                    input.UserId = record.Id;
-                    return input;
+                    return record.Id;
                 }
                 else
                 {
@@ -140,14 +179,13 @@ namespace FlightNode.Identity.Domain.Logic
             {
                 throw UserException.FromMultipleMessages(result.Errors);
             }
-
         }
 
         private User Map(UserModel input)
         {
             return new User
             {
-                Active = input.Active,
+                Active = input.Active ? STATUS_ACTIVE : STATUS_INACTIVE,
                 Email = input.Email,
                 FamilyName = input.FamilyName,
                 GivenName = input.GivenName,
@@ -177,6 +215,27 @@ namespace FlightNode.Identity.Domain.Logic
             }
         }
 
-        private const string ACTIVE = "active";
+        public void Approve(List<int> ids)
+        {
+            if (ids == null)
+            {
+                throw new ArgumentNullException("ids");
+            }
+
+            foreach (var id in ids)
+            {
+                var user = _userManager.FindByIdAsync(id).Result;
+
+                if (user != null)
+                {
+                    user.Active = STATUS_ACTIVE;
+                    user.LockoutEnabled = false;
+
+                    var updateResult = _userManager.UpdateAsync(user).Result;
+                }
+                // Ignore else case - likely implies some manipulation of the input.
+                // Otherwise, doesn't really matter. The record will show up in the list again.
+            }
+        }
     }
 }

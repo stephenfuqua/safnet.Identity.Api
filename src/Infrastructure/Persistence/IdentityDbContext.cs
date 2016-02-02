@@ -4,10 +4,9 @@ using System.Data.Entity;
 
 namespace FlightNode.Identity.Infrastructure.Persistence
 {
+    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
     public class IdentityDbContext : IdentityDbContext<User, Role, int, UserLogin, UserRole, UserClaim>
     {
-        // TODO: extract an interface
-
         public IdentityDbContext()
             :base(Properties.Settings.Default.IdentityConnectionString)
         {

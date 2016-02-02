@@ -1,8 +1,6 @@
 ﻿using FlightNode.Common.Exceptions;
 using FlightNode.Identity.Domain.Entities;
-using FlightNode.Identity.Domain.Interfaces;
 using FlightNode.Identity.Domain.Logic;
-using FlightNode.Identity.Infrastructure.Persistence;
 using FlightNode.Identity.Services.Models;
 using Microsoft.AspNet.Identity;
 using Moq;
@@ -49,7 +47,7 @@ namespace FlightNode.Identity.UnitTests.Domain.Logic
                 Assert.Throws<ArgumentNullException>(() => new UserDomainManager(null));
             }
         }
-        
+
         public class CreateUser : Fixture
         {
             [Fact]
@@ -70,7 +68,7 @@ namespace FlightNode.Identity.UnitTests.Domain.Logic
             const string email = "jose@jalapenos.com";
             const int userId = 2342;
             const bool lockedOut = true;
-            const string active = "pending";
+            const bool active = true;
 
             private UserModel RunTest()
             {
@@ -83,7 +81,6 @@ namespace FlightNode.Identity.UnitTests.Domain.Logic
                     PrimaryPhoneNumber = primaryPhoneNumber,
                     SecondaryPhoneNumber = secondaryPhoneNumber,
                     UserName = userName,
-                    Roles = new List<string>(),
                     LockedOut = lockedOut,
                     Active = active
                 };
@@ -107,7 +104,7 @@ namespace FlightNode.Identity.UnitTests.Domain.Logic
                         Assert.Equal(userName, actual.UserName);
                         Assert.Equal(email, actual.Email);
                         Assert.Equal(lockedOut, actual.LockoutEnabled);
-                        Assert.Equal(active, actual.Active);
+                        Assert.Equal("active", actual.Active);
                     })
                     .Returns((User actual, string p) =>
                     {
@@ -133,7 +130,7 @@ namespace FlightNode.Identity.UnitTests.Domain.Logic
 
                         return Task.Run(() => SuccessResult.Create());
                     });
-                
+
                 Assert.Throws<UserException>(() => RunTest());
             }
 
@@ -164,6 +161,177 @@ namespace FlightNode.Identity.UnitTests.Domain.Logic
         }
 
 
+        public class CreatePendingUser : Fixture
+        {
+            [Fact]
+            public void NullObjectNotAllowed()
+            {
+                Assert.Throws<ArgumentNullException>(() =>
+                {
+                    BuildSystem().Create(null);
+                });
+            }
+
+            const string givenName = "José";
+            const string familyName = "Jalapeño";
+            const string primaryPhoneNumber = "(512) 555-2391";
+            const string secondaryPhoneNumber = "(651) 234-2349";
+            const string userName = "josej";
+            const string password = "bien gracias, y tú?";
+            const string email = "jose@jalapenos.com";
+            const int userId = 2342;
+            const bool lockedOut = true;
+            const bool active = true;
+
+            private UserModel RunPositiveTest(Action<int,string[]> roleEvaluator, Action<User, string> userEvaluator)
+            {
+
+                //
+                // Assert via mock expectations
+                mockUserManager.Setup(x => x.AddToRolesAsync(It.Is<int>(y => y == userId), It.IsAny<string[]>()))
+                    .Callback((int actualId, string[] actualRoles) =>
+                    {
+                        roleEvaluator(actualId, actualRoles);
+                    })
+                    .Returns(Task.Run(() => SuccessResult.Create()));
+
+                mockUserManager.Setup(x => x.CreateAsync(It.IsAny<User>(), It.Is<string>(y => y == password)))
+                    .Callback((User actual, string p) =>
+                    {
+                        userEvaluator(actual, p);
+                    })
+                    .Returns((User actual, string p) =>
+                    {
+                        actual.Id = userId;
+
+                        return Task.Run(() => SuccessResult.Create());
+                    });
+                return RunTest();
+            }
+
+            private UserModel RunTest()
+            {
+
+                //
+                // Arrange
+                var input = new UserModel
+                {
+                    Email = email,
+                    FamilyName = familyName,
+                    GivenName = givenName,
+                    Password = password,
+                    PrimaryPhoneNumber = primaryPhoneNumber,
+                    SecondaryPhoneNumber = secondaryPhoneNumber,
+                    UserName = userName,
+                };
+
+                //
+                // Act
+                return BuildSystem().CreatePending(input);
+            }
+
+            [Fact]
+            public void ConfirmUserIdIsSetInReturnObject()
+            {
+                var result = RunPositiveTest((x,y)=> { },(a,b) => { });
+
+                Assert.Equal(userId, result.UserId);
+            }
+
+            [Fact]
+            public void ConfirmUserNameIsMapped()
+            {
+                RunPositiveTest((x, y) => { }, (u, p) => { Assert.Equal(userName, u.UserName); });
+            }
+
+            [Fact]
+            public void ConfirmGivenNameIsMapped()
+            {
+                RunPositiveTest((x, y) => { }, (u, p) => { Assert.Equal(givenName, u.GivenName); });
+            }
+
+            [Fact]
+            public void ConfirmFamilyNameIsMapped()
+            {
+                RunPositiveTest((x, y) => { }, (u, p) => { Assert.Equal(familyName, u.FamilyName); });
+            }
+
+            [Fact]
+            public void ConfirmPrimaryPhoneNumberIsMapped()
+            {
+                RunPositiveTest((x, y) => { }, (u, p) => { Assert.Equal(primaryPhoneNumber, u.PhoneNumber); });
+            }
+
+            [Fact]
+            public void ConfirmSecondaryPhoneNumberIsMapped()
+            {
+                RunPositiveTest((x, y) => { }, (u, p) => { Assert.Equal(secondaryPhoneNumber, u.MobilePhoneNumber); });
+            }
+
+            [Fact]
+            public void ConfirmEmailPhoneNumberIsMapped()
+            {
+                RunPositiveTest((x, y) => { }, (u, p) => { Assert.Equal(email, u.Email); });
+            }
+
+
+            [Fact]
+            public void ConfirmUserIsLockedOut()
+            {
+                RunPositiveTest((x, y) => { }, (u, p) => { Assert.True(u.LockoutEnabled); });
+            }
+
+            [Fact]
+            public void ConfirmStatusIsPending()
+            {
+                RunPositiveTest((x, y) => { }, (u, p) => { Assert.Equal("pending", u.Active); });
+            }
+
+            [Fact]
+            public void ConfirmRoleIsSetForNewUser()
+            {
+                RunPositiveTest((i, r) => { Assert.Equal(userId, i); }, (x, y) => { });
+            }
+
+            [Fact]
+            public void ConfirmRoleIsReporter()
+            {
+                RunPositiveTest((i, r) => { Assert.Equal("Reporter", r[0]); }, (x, y) => { });
+            }
+
+            [Fact]
+            public void ConfirmExceptionIfRolesDoNotSave()
+            {
+                mockUserManager.Setup(x => x.AddToRolesAsync(It.Is<int>(y => y == userId), It.IsAny<string[]>()))
+                    .Returns(Task.Run(() => SuccessResult.Failed("asdfasd")));
+
+                mockUserManager.Setup(x => x.CreateAsync(It.IsAny<User>(), It.Is<string>(y => y == password)))
+                    .Returns((User actual, string p) =>
+                    {
+                        actual.Id = userId;
+
+                        return Task.Run(() => SuccessResult.Create());
+                    });
+
+                Assert.Throws<UserException>(() => RunTest());
+            }
+
+            [Fact]
+            public void ConfirmErrorHandling()
+            {
+                mockUserManager.Setup(x => x.CreateAsync(It.IsAny<User>(), It.Is<string>(y => y == password)))
+                    .Returns((User actual, string p) =>
+                    {
+                        actual.Id = userId;
+
+                        return Task.Run(() => new IdentityResult(new[] { "something bad happened" }));
+                    });
+
+
+                Assert.Throws<UserException>(() => RunTest());
+            }
+        }
+
         public class UpdateUser : Fixture
         {
             [Fact]
@@ -186,7 +354,7 @@ namespace FlightNode.Identity.UnitTests.Domain.Logic
             const string oldRole = "Old";
             const string newRole = "new";
             const bool lockedOut = true;
-            const string active = "pending";
+            const bool active = false;
 
             private void RunTest()
             {
@@ -200,10 +368,10 @@ namespace FlightNode.Identity.UnitTests.Domain.Logic
                     SecondaryPhoneNumber = secondaryPhoneNumber,
                     UserName = userName,
                     UserId = userId,
-                    Roles = new List<string>() {  newRole },
                     LockedOut = lockedOut,
                     Active = active
                 };
+                input.Roles.Add(newRole);
 
                 BuildSystem().Update(input);
             }
@@ -225,7 +393,7 @@ namespace FlightNode.Identity.UnitTests.Domain.Logic
                         Assert.Equal(secondaryPhoneNumber, actual.MobilePhoneNumber);
                         Assert.Equal(userName, actual.UserName);
                         Assert.Equal(email, actual.Email);
-                        Assert.Equal(active, actual.Active);
+                        Assert.Equal("inactive", actual.Active);
                         Assert.Equal(lockedOut, actual.LockoutEnabled);
                     })
                     .Returns((User actual) =>
@@ -290,7 +458,7 @@ namespace FlightNode.Identity.UnitTests.Domain.Logic
                         Assert.Equal(secondaryPhoneNumber, actual.MobilePhoneNumber);
                         Assert.Equal(userName, actual.UserName);
                         Assert.Equal(email, actual.Email);
-                        Assert.Equal(active, actual.Active);
+                        Assert.Equal("inactive", actual.Active);
                         Assert.Equal(lockedOut, actual.LockoutEnabled);
                     })
                     .Returns((User actual) =>
@@ -333,7 +501,7 @@ namespace FlightNode.Identity.UnitTests.Domain.Logic
                         Assert.Equal(secondaryPhoneNumber, actual.MobilePhoneNumber);
                         Assert.Equal(userName, actual.UserName);
                         Assert.Equal(email, actual.Email);
-                        Assert.Equal(active, actual.Active);
+                        Assert.Equal("inactive", actual.Active);
                     })
                     .Returns((User actual) =>
                     {
@@ -593,6 +761,222 @@ namespace FlightNode.Identity.UnitTests.Domain.Logic
             }
         }
 
+
+        public class FindAllPendingUsers : Fixture
+        {
+
+            [Fact]
+            public void ConfirmEmptyListWhenThereAreNoUsersInTheSystem()
+            {
+                mockUserManager.SetupGet(x => x.Users)
+                    .Returns(new List<User>().AsQueryable());
+
+                var actual = BuildSystem().FindAllPending();
+
+                Assert.Equal(0, actual.Count());
+            }
+
+            public class NoPendingUsers : Fixture
+            {
+                const int userId = 12312;
+                const string email = "asd@asdfasd.com";
+                const string phoneNumber = "(555) 555-5555";
+                const string userName = "asdfasd";
+                const string mobileNumber = "(555) 555-5554";
+                const bool lockedOut = true;
+                const string active = "inactive";
+
+                private IEnumerable<PendingUserModel> RunTheTest()
+                {
+                    var user = new User
+                    {
+                        Active = active,
+                        MobilePhoneNumber = mobileNumber,
+                        Id = userId,
+                        Email = email,
+                        PhoneNumber = phoneNumber,
+                        UserName = userName,
+                        LockoutEnabled = lockedOut
+                    };
+
+                    mockUserManager.SetupGet(x => x.Users)
+                        .Returns(new List<User>() {
+                           user
+                        }.AsQueryable());
+
+                    return BuildSystem().FindAllPending();
+                }
+
+                [Fact]
+                public void ConfirmResultCount()
+                {
+                    var results = RunTheTest();
+                    Assert.Equal(0, results.Count());
+                }
+
+            }
+
+            public class SinglePendingUser : Fixture
+            {
+                const int userId = 12312;
+                const string email = "asd@asdfasd.com";
+                const string phoneNumber = "(555) 555-5555";
+                const string userName = "asdfasd";
+                const string mobileNumber = "(555) 555-5554";
+                const string active = "pending";
+                const string familyName = "last";
+                const string givenName = "first";
+                const string displayName = "first last";
+                const bool lockedOut = true;
+
+                private IEnumerable<PendingUserModel> RunTheTest()
+                {
+                    var user = new User
+                    {
+                        Active = active,
+                        MobilePhoneNumber = mobileNumber,
+                        Id = userId,
+                        Email = email,
+                        PhoneNumber = phoneNumber,
+                        UserName = userName,
+                        FamilyName = familyName,
+                        GivenName = givenName,
+                        LockoutEnabled = lockedOut
+                    };
+
+                    mockUserManager.SetupGet(x => x.Users)
+                        .Returns(new List<User>() {
+                           user
+                        }.AsQueryable());
+
+                    return BuildSystem().FindAllPending();
+                }
+
+                [Fact]
+                public void ConfirmResultCount()
+                {
+                    var results = RunTheTest();
+                    Assert.Equal(1, results.Count());
+                }
+
+
+                [Fact]
+                public void ConfirmSecondaryPhoneNumberIsMapped()
+                {
+                    Assert.Equal(mobileNumber, RunTheTest().First().SecondaryPhoneNumber);
+                }
+
+                [Fact]
+                public void ConfirmPrimaryPhoneNumberIsMapped()
+                {
+                    Assert.Equal(phoneNumber, RunTheTest().First().PrimaryPhoneNumber);
+                }
+
+                [Fact]
+                public void ConfirmEmailIsMapped()
+                {
+                    Assert.Equal(email, RunTheTest().First().Email);
+                }
+
+                [Fact]
+                public void ConfirmUserIdIsMapped()
+                {
+                    Assert.Equal(userId, RunTheTest().First().UserId);
+                }
+
+
+                [Fact]
+                public void ConfirmDisplayNameIsMapped()
+                {
+                    Assert.Equal(displayName, RunTheTest().First().DisplayName);
+                }
+            }
+
+            public class TwoActiveUsers : Fixture
+            {
+                const int userId = 12312;
+                const string email = "asd@asdfasd.com";
+                const string phoneNumber = "(555) 555-5555";
+                const string userName = "asdfasd";
+                const string mobileNumber = "(555) 555-5554";
+                const string active = "active";
+                const string familyName = "last";
+                const string givenName = "first";
+
+                private IEnumerable<UserModel> RunTheTest()
+                {
+                    var user = new User
+                    {
+                        Active = active,
+                        MobilePhoneNumber = mobileNumber,
+                        Id = userId,
+                        Email = email,
+                        PhoneNumber = phoneNumber,
+                        UserName = userName,
+                        FamilyName = familyName,
+                        GivenName = givenName
+                    };
+
+                    mockUserManager.SetupGet(x => x.Users)
+                        .Returns(new List<User>() {
+                            new User { Active = active },
+                           user
+                        }.AsQueryable());
+
+                    return BuildSystem().FindAll();
+                }
+
+                [Fact]
+                public void ConfirmResultCount()
+                {
+                    var results = RunTheTest();
+                    Assert.Equal(2, results.Count());
+                }
+
+                [Fact]
+                public void ConfirmMobileNumberIsMappedForSecondUser()
+                {
+                    Assert.Equal(mobileNumber, RunTheTest().Skip(1).First().SecondaryPhoneNumber);
+                }
+
+                [Fact]
+                public void ConfirmPhoneNumberIsMappedForSecondUser()
+                {
+                    Assert.Equal(phoneNumber, RunTheTest().Skip(1).First().PrimaryPhoneNumber);
+                }
+
+                [Fact]
+                public void ConfirmEmailIsMappedForSecondUser()
+                {
+                    Assert.Equal(email, RunTheTest().Skip(1).First().Email);
+                }
+
+                [Fact]
+                public void ConfirmUserNameIsMappedForSecondUser()
+                {
+                    Assert.Equal(userName, RunTheTest().Skip(1).First().UserName);
+                }
+
+                [Fact]
+                public void ConfirmUserIdIsMappedForSecondUser()
+                {
+                    Assert.Equal(userId, RunTheTest().Skip(1).First().UserId);
+                }
+
+                [Fact]
+                public void ConfirmGivenNameIsMappedForSecondUser()
+                {
+                    Assert.Equal(givenName, RunTheTest().Skip(1).First().GivenName);
+                }
+
+                [Fact]
+                public void ConfirmFamilyNameIsMappedForSecondUser()
+                {
+                    Assert.Equal(familyName, RunTheTest().Skip(1).First().FamilyName);
+                }
+            }
+        }
+
         public class FindAParticularUserById : Fixture
         {
 
@@ -708,6 +1092,221 @@ namespace FlightNode.Identity.UnitTests.Domain.Logic
                 }
             }
 
+        }
+
+
+        public class Approve : Fixture
+        {
+            [Fact]
+            public void NullObjectNotAllowed()
+            {
+                Assert.Throws<ArgumentNullException>(() =>
+                {
+                    BuildSystem().Approve(null);
+                });
+            }
+
+            private void RunTest(List<int> ids)
+            {
+                BuildSystem().Approve(ids);
+            }
+
+            [Fact]
+            public void UpdateTwoPeopleWhenBothExistSetsStatusToActive()
+            {
+                //
+                // Arrange
+                var ids = new List<int>() { 14, 43 };
+
+                mockUserManager.Setup(x => x.FindByIdAsync(It.Is<int>(y => y == ids[0])))
+                    .Returns(Task.Run(() => new User { Id = ids[0], Active = "pending" }));
+
+                mockUserManager.Setup(x => x.FindByIdAsync(It.Is<int>(y => y == ids[1])))
+                    .Returns(Task.Run(() => new User { Id = ids[1], Active = "pending" }));
+
+                mockUserManager.Setup(x => x.UpdateAsync(It.Is<User>(y => y.Id == ids[0])))
+                    .Callback((User actual) => { Assert.Equal("active", actual.Active); })
+                    .Returns(Task.Run(() => SuccessResult.Create()));
+
+                mockUserManager.Setup(x => x.UpdateAsync(It.Is<User>(y => y.Id == ids[1])))
+                    .Callback((User actual) => { Assert.Equal("active", actual.Active); })
+                    .Returns(Task.Run(() => SuccessResult.Create()));
+
+                //
+                // Act
+                RunTest(ids);
+
+                // nothing to Assert                
+            }
+
+
+            [Fact]
+            public void UpdateTwoPeopleWhenBothExistSetsUnlocksAccount()
+            {
+                //
+                // Arrange
+                var ids = new List<int>() { 14, 43 };
+
+                mockUserManager.Setup(x => x.FindByIdAsync(It.Is<int>(y => y == ids[0])))
+                    .Returns(Task.Run(() => new User { Id = ids[0], Active = "pending", LockoutEnabled = true }));
+
+                mockUserManager.Setup(x => x.FindByIdAsync(It.Is<int>(y => y == ids[1])))
+                    .Returns(Task.Run(() => new User { Id = ids[1], Active = "pending", LockoutEnabled = true }));
+
+                mockUserManager.Setup(x => x.UpdateAsync(It.Is<User>(y => y.Id == ids[0])))
+                    .Callback((User actual) => { Assert.False(actual.LockoutEnabled); })
+                    .Returns(Task.Run(() => SuccessResult.Create()));
+
+                mockUserManager.Setup(x => x.UpdateAsync(It.Is<User>(y => y.Id == ids[1])))
+                    .Callback((User actual) => { Assert.False(actual.LockoutEnabled); })
+                    .Returns(Task.Run(() => SuccessResult.Create()));
+
+                //
+                // Act
+                RunTest(ids);
+
+                // nothing to Assert                
+            }
+
+            [Fact]
+            public void ConfirmSavesSecondRecordEvenWhenFirstRecordDoesNotExist()
+            {
+
+                var ids = new List<int>() { 14, 43 };
+
+                mockUserManager.Setup(x => x.FindByIdAsync(It.Is<int>(y => y == ids[0])))
+                    .Returns(Task.Run(() => null as User));
+
+                mockUserManager.Setup(x => x.FindByIdAsync(It.Is<int>(y => y == ids[1])))
+                    .Returns(Task.Run(() => new User { Id = ids[1], Active = "pending" }));
+
+                mockUserManager.Setup(x => x.UpdateAsync(It.Is<User>(y => y.Id == ids[1])))
+                    .Callback((User actual) => { Assert.Equal("active", actual.Active); })
+                    .Returns(Task.Run(() => SuccessResult.Create()));
+
+                //
+                // Act
+                RunTest(ids);
+
+                // nothing to Assert
+            }
+
+            [Fact]
+            public void ConfirmSavesFirstRecordEvenWhenSecondRecordDoesNotExist()
+            {
+
+                var ids = new List<int>() { 14, 43 };
+
+
+                mockUserManager.Setup(x => x.FindByIdAsync(It.Is<int>(y => y == ids[0])))
+                    .Returns(Task.Run(() => new User { Id = ids[0], Active = "pending" }));
+
+                mockUserManager.Setup(x => x.FindByIdAsync(It.Is<int>(y => y == ids[1])))
+                    .Returns(Task.Run(() => null as User));
+
+                mockUserManager.Setup(x => x.UpdateAsync(It.Is<User>(y => y.Id == ids[0])))
+                    .Callback((User actual) => { Assert.Equal("active", actual.Active); })
+                    .Returns(Task.Run(() => SuccessResult.Create()));
+
+                //
+                // Act
+                RunTest(ids);
+
+                // nothing to Assert
+            }
+
+
+
+            [Fact]
+            public void ConfirmSavesSecondRecordEvenWhenFirstRecordFailsToUpdate()
+            {
+
+                var ids = new List<int>() { 14, 43 };
+
+                mockUserManager.Setup(x => x.FindByIdAsync(It.Is<int>(y => y == ids[0])))
+                    .Returns(Task.Run(() => new User { Id = ids[0], Active = "pending" }));
+
+                mockUserManager.Setup(x => x.FindByIdAsync(It.Is<int>(y => y == ids[1])))
+                    .Returns(Task.Run(() => new User { Id = ids[1], Active = "pending" }));
+
+                mockUserManager.Setup(x => x.UpdateAsync(It.Is<User>(y => y.Id == ids[0])))
+                    .Callback((User actual) => { Assert.Equal("active", actual.Active); })
+                    .Returns(Task.Run(() => new IdentityResult("errorrrrrrr")));
+
+                mockUserManager.Setup(x => x.UpdateAsync(It.Is<User>(y => y.Id == ids[1])))
+                    .Callback((User actual) => { Assert.Equal("active", actual.Active); })
+                    .Returns(Task.Run(() => SuccessResult.Create()));
+
+                //
+                // Act
+                RunTest(ids);
+
+                // nothing to Assert
+            }
+
+
+
+            [Fact]
+            public void ConfirmSavesFirstRecordEvenWhenSecondRecordFailsToUpdate()
+            {
+
+                var ids = new List<int>() { 14, 43 };
+
+                mockUserManager.Setup(x => x.FindByIdAsync(It.Is<int>(y => y == ids[0])))
+                    .Returns(Task.Run(() => new User { Id = ids[0], Active = "pending" }));
+
+                mockUserManager.Setup(x => x.FindByIdAsync(It.Is<int>(y => y == ids[1])))
+                    .Returns(Task.Run(() => new User { Id = ids[1], Active = "pending" }));
+
+                mockUserManager.Setup(x => x.UpdateAsync(It.Is<User>(y => y.Id == ids[0])))
+                    .Callback((User actual) => { Assert.Equal("active", actual.Active); })
+                    .Returns(Task.Run(() => SuccessResult.Create()));
+
+                mockUserManager.Setup(x => x.UpdateAsync(It.Is<User>(y => y.Id == ids[1])))
+                    .Callback((User actual) => { Assert.Equal("active", actual.Active); })
+                    .Returns(Task.Run(() => new IdentityResult("errorrrrrrr")));
+
+                //
+                // Act
+                RunTest(ids);
+
+                // nothing to Assert
+            }
+            
+
+            // More detailed exception handling occurs in the controller class. In this case,
+            // if one record succeeds and a subsequent record (from array of multiple id values)
+            // fails, then it is acceptable that the first (or more) succeeded. That one+ will
+            // be removed from the pending list as desired.
+
+            [Fact]
+            public void ConfirmDoesNotCatchExceptionOnFind()
+            {
+                var ids = new List<int>() { 14, 43 };
+
+                mockUserManager.Setup(x => x.FindByIdAsync(It.Is<int>(y => y == ids[0])))
+                    .Throws<InvalidOperationException>();
+
+                //
+                // Act & Assert
+                Assert.Throws<InvalidOperationException>(() => RunTest(ids));
+            }
+
+            [Fact]
+            public void ConfirmDoesNotCatchExceptionOnUpdate()
+            {
+                var ids = new List<int>() { 14, 43 };
+
+                mockUserManager.Setup(x => x.FindByIdAsync(It.Is<int>(y => y == ids[0])))
+                    .Returns(Task.Run(() => new User { Id = ids[0], Active = "pending" }));
+
+                mockUserManager.Setup(x => x.UpdateAsync(It.Is<User>(y => y.Id == ids[0])))
+                    .Throws<InvalidOperationException>();
+
+                //
+                // Act & Assert
+                Assert.Throws<InvalidOperationException>(() => RunTest(ids));
+            }
         }
     }
 

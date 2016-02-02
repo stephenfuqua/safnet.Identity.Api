@@ -71,7 +71,7 @@ namespace FlightNode.Identity.Services.Models
         /// <summary>
         /// Roles to which this user belongs.
         /// </summary>
-        public IList<string> Roles { get; set; }
+        public List<string> Roles { get; private set; }
 
         /// <summary>
         /// Returns concatenated GivenName and FamilyName.
@@ -81,6 +81,15 @@ namespace FlightNode.Identity.Services.Models
         /// <summary>
         /// Gets or sets the active status, typically one of { active, inactive, pending }.
         /// </summary>
-        public string Active { get; set; }
+        public bool Active { get; set; }
+
+
+        /// <summary>
+        /// Creates a new instance of <see cref="UserModel"/>.
+        /// </summary>
+        public UserModel()
+        {
+            Roles = new List<string>();
+        }
     }
 }
