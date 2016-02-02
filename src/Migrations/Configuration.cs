@@ -4,7 +4,7 @@ using System.Data.Entity.Migrations;
 
 namespace FlightNode.Identity.Migrations
 {
-
+    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
     internal sealed class Configuration : DbMigrationsConfiguration<FlightNode.Identity.Infrastructure.Persistence.IdentityDbContext>
     {
         public Configuration()

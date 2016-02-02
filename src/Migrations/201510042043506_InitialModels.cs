@@ -2,6 +2,7 @@ namespace FlightNode.Identity.Migrations
 {
     using System.Data.Entity.Migrations;
     
+    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
     public partial class InitialModels : DbMigration
     {
         public override void Up()
