@@ -9,6 +9,13 @@ namespace FlightNode.Identity.Domain.Entities
 {
     public class User : IdentityUser<int, UserLogin, UserRole, UserClaim>, IEntity
     {
+        // Exists so that other projects don't have to reference Identity framework.
+        public override int Id
+        {
+            get { return base.Id;  }
+            set { base.Id = value; }
+        }
+
         public string Active { get; set; }
 
         [DataType(DataType.PhoneNumber)]
