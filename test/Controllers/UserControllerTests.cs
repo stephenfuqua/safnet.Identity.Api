@@ -980,9 +980,7 @@ namespace FlightNode.Identity.UnitTests.Controllers
                             modified.UserId = id;
                             return modified;
                         });
-
-                    const string uri = "http://localhost";
-                    const string expected = "http://localhost/";
+                    
 
                     //
                     // Act
