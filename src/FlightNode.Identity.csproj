@@ -63,6 +63,10 @@
     <Compile Include="Migrations\201601280309540_UpdatedUser.Designer.cs">
       <DependentUpon>201601280309540_UpdatedUser.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\201603100333507_AdditionalAddressFields.cs" />
+    <Compile Include="Migrations\201603100333507_AdditionalAddressFields.Designer.cs">
+      <DependentUpon>201603100333507_AdditionalAddressFields.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\Settings.Designer.cs">
@@ -243,6 +247,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\201601280309540_UpdatedUser.resx">
       <DependentUpon>201601280309540_UpdatedUser.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\201603100333507_AdditionalAddressFields.resx">
+      <DependentUpon>201603100333507_AdditionalAddressFields.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

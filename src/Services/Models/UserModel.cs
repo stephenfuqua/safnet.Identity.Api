@@ -82,6 +82,11 @@ namespace FlightNode.Identity.Services.Models
         /// Gets or sets the active status, typically one of { active, inactive, pending }.
         /// </summary>
         public bool Active { get; set; }
+        public string ZipCode { get; set; }
+        public string State { get; set; }
+        public string City { get; set; }
+        public string MailingAddress { get; set; }
+        public string County { get; set; }
 
 
         /// <summary>

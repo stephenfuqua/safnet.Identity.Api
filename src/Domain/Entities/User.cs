@@ -9,6 +9,10 @@ namespace FlightNode.Identity.Domain.Entities
 {
     public class User : IdentityUser<int, UserLogin, UserRole, UserClaim>, IEntity
     {
+        public const string STATUS_ACTIVE = "active";
+        public const string STATUS_PENDING = "pending";
+        public const string STATUS_INACTIVE = "inactive";
+
         // Exists so that other projects don't have to reference Identity framework.
         public override int Id
         {
@@ -31,9 +35,29 @@ namespace FlightNode.Identity.Domain.Entities
 
         public string DisplayName {  get { return GivenName + " " + FamilyName; } }
 
+        [Required]
+        [StringLength(50)]
+        public string County { get; set; }
+
+        [StringLength(100)]
+        public string MailingAddress { get; set; }
+
+        [StringLength(50)]
+        public string City { get; set; }
+
+        [StringLength(2)]
+        public string State { get; set; }
+
+        [StringLength(10)]
+        public string ZipCode { get; set; }
+
+
+        /// <summary>
+        /// Creates a new <see cref="User"/>, initially in the inactive state.
+        /// </summary>
         public User()
         {
-            Active = "inactive";
+            Active = STATUS_INACTIVE;
         }
 
         /// <summary>

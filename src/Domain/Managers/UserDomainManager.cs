@@ -12,9 +12,6 @@ namespace FlightNode.Identity.Domain.Logic
 
     public class UserDomainManager : DomainLogic, IUserDomainManager
     {
-        private const string STATUS_ACTIVE = "active";
-        private const string STATUS_PENDING = "pending";
-        private const string STATUS_INACTIVE = "inactive";
 
         private Interfaces.IUserPersistence _userManager;
 
@@ -32,7 +29,7 @@ namespace FlightNode.Identity.Domain.Logic
         public IEnumerable<UserModel> FindAll()
         {
             return _userManager.Users
-                .Where(x => x.Active == STATUS_ACTIVE)
+                .Where(x => x.Active == User.STATUS_ACTIVE)
                 .ToList()
                 .Select(Map);
         }
@@ -40,7 +37,7 @@ namespace FlightNode.Identity.Domain.Logic
         public IEnumerable<PendingUserModel> FindAllPending()
         {
             return _userManager.Users
-                .Where(x => x.Active == STATUS_PENDING)
+                .Where(x => x.Active == User.STATUS_PENDING)
                 .ToList()
                 .Select(x => new PendingUserModel
                 {
@@ -80,7 +77,12 @@ namespace FlightNode.Identity.Domain.Logic
                 GivenName = input.GivenName,
                 FamilyName = input.FamilyName,
                 LockedOut = input.LockoutEnabled,
-                Active = input.Active == STATUS_ACTIVE
+                Active = input.Active == User.STATUS_ACTIVE,
+                MailingAddress = input.MailingAddress,
+                City = input.City,
+                State = input.State,
+                County = input.County,
+                ZipCode = input.ZipCode
             };
         }
 
@@ -98,15 +100,8 @@ namespace FlightNode.Identity.Domain.Logic
 
             var record = _userManager.FindByIdAsync(input.UserId).Result;
 
-            record.Email = input.Email;
-            record.MobilePhoneNumber = input.SecondaryPhoneNumber;
-            record.PhoneNumber = input.PrimaryPhoneNumber;
-            record.UserName = input.UserName;
-            record.GivenName = input.GivenName;
-            record.FamilyName = input.FamilyName;
-            record.Active = input.Active ? STATUS_ACTIVE : STATUS_INACTIVE;
-            record.LockoutEnabled = input.LockedOut;
-
+            record = Map(input, record);
+            
             var result = _userManager.UpdateAsync(record).Result;
             if (result.Succeeded)
             {
@@ -151,8 +146,8 @@ namespace FlightNode.Identity.Domain.Logic
 
             // Don't trust the client to provide these three important values!
             record.LockoutEnabled = true;
-            record.Active = "pending";
-            var roles = new [] { "Reporter" };
+            record.Active = User.STATUS_PENDING;
+            var roles = new[] { "Reporter" };
 
             input.UserId = Create(record, roles, input.Password);
 
@@ -181,19 +176,24 @@ namespace FlightNode.Identity.Domain.Logic
             }
         }
 
-        private User Map(UserModel input)
+        private User Map(UserModel input, User record = null)
         {
-            return new User
-            {
-                Active = input.Active ? STATUS_ACTIVE : STATUS_INACTIVE,
-                Email = input.Email,
-                FamilyName = input.FamilyName,
-                GivenName = input.GivenName,
-                MobilePhoneNumber = input.SecondaryPhoneNumber,
-                PhoneNumber = input.PrimaryPhoneNumber,
-                UserName = input.UserName,
-                LockoutEnabled = input.LockedOut
-            };
+            record = record ?? new User();
+            record.Active = input.Active ? User.STATUS_ACTIVE : User.STATUS_INACTIVE;
+            record.Email = input.Email;
+            record.FamilyName = input.FamilyName;
+            record.GivenName = input.GivenName;
+            record.MobilePhoneNumber = input.SecondaryPhoneNumber;
+            record.PhoneNumber = input.PrimaryPhoneNumber;
+            record.UserName = input.UserName;
+            record.LockoutEnabled = input.LockedOut;
+            record.County = input.County;
+            record.MailingAddress = input.MailingAddress;
+            record.City = input.City;
+            record.State = input.State;
+            record.ZipCode = input.ZipCode;
+
+            return record;
         }
 
         public void ChangePassword(int id, PasswordModel change)
@@ -228,7 +228,7 @@ namespace FlightNode.Identity.Domain.Logic
 
                 if (user != null)
                 {
-                    user.Active = STATUS_ACTIVE;
+                    user.Active = User.STATUS_ACTIVE;
                     user.LockoutEnabled = false;
 
                     var updateResult = _userManager.UpdateAsync(user).Result;
