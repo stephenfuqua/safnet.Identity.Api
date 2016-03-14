@@ -17,5 +17,8 @@
     <Setting Name="IssuerUrl" Type="System.String" Scope="Application">
       <Value Profile="(Default)">http://localhost</Value>
     </Setting>
+    <Setting Name="SiteName" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">FlightNode</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

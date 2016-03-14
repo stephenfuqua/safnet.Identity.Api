@@ -67,5 +67,14 @@ namespace FlightNode.Identity.Properties {
                 return ((string)(this["IssuerUrl"]));
             }
         }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("FlightNode")]
+        public string SiteName {
+            get {
+                return ((string)(this["SiteName"]));
+            }
+        }
     }
 }

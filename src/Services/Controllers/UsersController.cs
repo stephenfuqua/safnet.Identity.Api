@@ -12,6 +12,7 @@ using System.Linq;
 using System.Web;
 using System.Web.Http;
 using System.Collections.Generic;
+using FlightNode.Common.Utility;
 
 namespace FligthNode.Identity.Services.Controllers
 {
@@ -23,6 +24,7 @@ namespace FligthNode.Identity.Services.Controllers
         private readonly IUserDomainManager _manager;
 
         private IUserDomainManager _managerWithTokenSetup;
+
 
         /// <summary>
         /// A property to retrieve a <see cref="IUserDomainManager"/> that can handle password changes.
@@ -37,7 +39,7 @@ namespace FligthNode.Identity.Services.Controllers
                 if (_managerWithTokenSetup == null)
                 {
                     var userManager = HttpContext.Current.GetOwinContext().GetUserManager<AppUserManager>();
-                    _managerWithTokenSetup = new UserDomainManager(userManager);
+                    _managerWithTokenSetup = new UserDomainManager(userManager, new EmailFactory());
                 }
                 return _managerWithTokenSetup;
             }

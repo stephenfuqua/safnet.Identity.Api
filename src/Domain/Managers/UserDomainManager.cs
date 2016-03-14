@@ -1,5 +1,6 @@
 ﻿using FlightNode.Common.BaseClasses;
 using FlightNode.Common.Exceptions;
+using FlightNode.Common.Utility;
 using FlightNode.Identity.Domain.Entities;
 using FlightNode.Identity.Domain.Interfaces;
 using FlightNode.Identity.Services.Models;
@@ -9,20 +10,43 @@ using System.Linq;
 
 namespace FlightNode.Identity.Domain.Logic
 {
-
+    /// <summary>
+    /// Domain / business logic for Users.
+    /// </summary>
     public class UserDomainManager : DomainLogic, IUserDomainManager
     {
 
-        private Interfaces.IUserPersistence _userManager;
+        public static readonly string PendingUserEmailSubject = Properties.Settings.Default.SiteName + " pending user registration received";
+        public const string PendingUserEmailBodyPattern = @"Thank you for creating a new account at {0}. Your account will remain in a pending state until an administrator approves your registration, at which point you will receive an e-mail notification to alert you to the change in status.
 
-        public UserDomainManager(Interfaces.IUserPersistence manager)
+Username: {1}
+Password: {2}
+
+Please visit the website's Contact form to submit any questions to the administrators.
+";
+
+        private IUserPersistence _userManager;
+        private IEmailFactory _emailFactory;
+
+
+        /// <summary>
+        /// Creates a new instance of <see cref="UserDomainManager"/>.
+        /// </summary>
+        /// <param name="manager">Instance of <see cref="Interfaces.IUserPersistence"/></param>
+        /// <param name="emailFactory">Instance of <see cref="IEmailFactory"/></param>
+        public UserDomainManager(IUserPersistence manager, IEmailFactory emailFactory)
         {
             if (manager == null)
             {
                 throw new ArgumentNullException("manager");
             }
+            if (emailFactory == null)
+            {
+                throw new ArgumentNullException("emailFactory");
+            }
 
             _userManager = manager;
+            _emailFactory = emailFactory;
         }
 
 
@@ -144,14 +168,31 @@ namespace FlightNode.Identity.Domain.Logic
         {
             var record = Map(input);
 
+            input.UserId = SavePendingUserRecord(input, record);
+
+            SendPendingUserEmail(input);
+
+            return input;
+        }
+
+        private void SendPendingUserEmail(UserModel input)
+        {
+            var to = string.Format("{0} {1} <{2}>", input.GivenName, input.FamilyName, input.Email);
+            var body = string.Format(PendingUserEmailBodyPattern, Properties.Settings.Default.IssuerUrl, input.UserName, input.Password);
+            var message = new NotificationModel(to, PendingUserEmailSubject, body);
+
+            _emailFactory.CreateNotifier()
+                .Send(message);
+        }
+
+        private int SavePendingUserRecord(UserModel input, User record)
+        {
             // Don't trust the client to provide these three important values!
             record.LockoutEnabled = true;
             record.Active = User.STATUS_PENDING;
             var roles = new[] { "Reporter" };
 
-            input.UserId = Create(record, roles, input.Password);
-
-            return input;
+            return Create(record, roles, input.Password);
         }
 
         private int Create(User record, string[] roles, string password)

@@ -1,5 +1,8 @@
 ﻿using FlightNode.Common.Exceptions;
+using FlightNode.Common.UnitTests;
+using FlightNode.Common.Utility;
 using FlightNode.Identity.Domain.Entities;
+using FlightNode.Identity.Domain.Interfaces;
 using FlightNode.Identity.Domain.Logic;
 using FlightNode.Identity.Services.Models;
 using Microsoft.AspNet.Identity;
@@ -39,11 +42,20 @@ namespace FlightNode.Identity.UnitTests.Domain.Logic
             protected const string NewRole = "new";
             protected const string RoleAdministrator = "Administrator";
 
-            protected Mock<Identity.Domain.Interfaces.IUserPersistence> mockUserManager = new Mock<Identity.Domain.Interfaces.IUserPersistence>(MockBehavior.Strict);
+            protected MockRepository mockRepository = new MockRepository(MockBehavior.Strict);
+            protected Mock<IUserPersistence> mockUserManager;
+            protected Mock<IEmailFactory> emailFactoryMock;
+
+            public Fixture()
+            {
+                mockUserManager = mockRepository.Create<IUserPersistence>();
+                emailFactoryMock = mockRepository.Create<IEmailFactory>();
+            }
+
 
             protected UserDomainManager BuildSystem()
             {
-                return new UserDomainManager(mockUserManager.Object);
+                return new UserDomainManager(mockUserManager.Object, emailFactoryMock.Object);
             }
 
             public void Dispose()
@@ -69,9 +81,15 @@ namespace FlightNode.Identity.UnitTests.Domain.Logic
             }
 
             [Fact]
-            public void ConfirmThatNullArgumentIsNotAllowed()
+            public void ConfirmThatNullFirstArgumentIsNotAllowed()
             {
-                Assert.Throws<ArgumentNullException>(() => new UserDomainManager(null));
+                Assert.Throws<ArgumentNullException>(() => new UserDomainManager(null, emailFactoryMock.Object));
+            }
+
+            [Fact]
+            public void ConfirmThatNullSecondArgumentIsNotAllowed()
+            {
+                Assert.Throws<ArgumentNullException>(() => new UserDomainManager(mockUserManager.Object, null));
             }
         }
 
@@ -361,6 +379,63 @@ namespace FlightNode.Identity.UnitTests.Domain.Logic
                 //
                 // Act
                 return BuildSystem().CreatePending(input);
+            }
+
+            [Fact]
+            public void ConfirmSendsEmailToNewUserWithCorrectNameAndEmail()
+            {
+                SetupMockExpectationsForSuccessfulSaveOfUserAndRoles();
+                var emailFactoryMock = SetupPendingEmailExpectation();
+
+                RunTest();
+
+                VerifyEmailParameter(emailFactoryMock, y => y.To == GivenName + " " + FamilyName + " <" + Email + ">");
+            }
+
+            [Fact]
+            public void ConfirmSendsEmailToNewUserWithCorrectSubject()
+            {
+                SetupMockExpectationsForSuccessfulSaveOfUserAndRoles();
+                var emailFactoryMock = SetupPendingEmailExpectation();
+
+                RunTest();
+
+                VerifyEmailParameter(emailFactoryMock, y => y.Subject == UserDomainManager.PendingUserEmailSubject);
+            }
+
+            [Fact]
+            public void ConfirmSendsEmailToNewUserWithCorrectMessage()
+            {
+                SetupMockExpectationsForSuccessfulSaveOfUserAndRoles();
+                var emailFactoryMock = SetupPendingEmailExpectation();
+                var expected = @"Thank you for creating a new account at http://localhost. Your account will remain in a pending state until an administrator approves your registration, at which point you will receive an e-mail notification to alert you to the change in status.
+
+Username: " + UserName + @"
+Password: " + Password + @"
+
+Please visit the website's Contact form to submit any questions to the administrators.
+";
+
+                RunTest();
+
+                VerifyEmailParameter(emailFactoryMock, y => y.Body == expected);
+            }
+
+            private static void VerifyEmailParameter(Mock<IEmailNotifier> emailFactoryMock, Func<NotificationModel, bool> assert)
+            {
+                emailFactoryMock.Verify(x => x.Send(It.Is<NotificationModel>(y => assert(y))));
+            }
+
+            private Mock<IEmailNotifier> SetupPendingEmailExpectation()
+            {
+                var notifierMock = this.mockRepository.Create<IEmailNotifier>();
+                notifierMock.Setup(x => x.Send(It.IsAny<NotificationModel>()));
+
+
+                this.emailFactoryMock.Setup(x => x.CreateNotifier())
+                    .Returns(notifierMock.Object);
+
+                return notifierMock;
             }
 
             [Fact]
