@@ -64,6 +64,17 @@ namespace FlightNode.Identity.UnitTests.Domain.Logic
             }
 
 
+            protected Mock<IEmailNotifier> ExpectToSendEmail()
+            {
+                var notifierMock = this.mockRepository.Create<IEmailNotifier>();
+                notifierMock.Setup(x => x.Send(It.IsAny<NotificationModel>()));
+
+
+                this.emailFactoryMock.Setup(x => x.CreateNotifier())
+                    .Returns(notifierMock.Object);
+
+                return notifierMock;
+            }
 
             public static Task<IdentityResult> CreateSuccessResult()
             {
@@ -275,7 +286,7 @@ namespace FlightNode.Identity.UnitTests.Domain.Logic
             {
 
                 SetupMockExpectationsForSuccessfulSaveOfUserAndRoles();
-                
+
                 RunTest();
 
                 mockUserManager.Verify(x => x.CreateAsync(It.Is<User>(y => assert(y)), It.IsAny<string>()));
@@ -308,7 +319,7 @@ namespace FlightNode.Identity.UnitTests.Domain.Logic
                 Assert.Throws<UserException>(() => RunTest().UserId);
             }
         }
-        
+
         public class CreatePendingUser : Fixture
         {
             [Fact]
@@ -385,7 +396,7 @@ namespace FlightNode.Identity.UnitTests.Domain.Logic
             public void ConfirmSendsEmailToNewUserWithCorrectNameAndEmail()
             {
                 SetupMockExpectationsForSuccessfulSaveOfUserAndRoles();
-                var emailFactoryMock = SetupPendingEmailExpectation();
+                var emailFactoryMock = ExpectToSendEmail();
 
                 RunTest();
 
@@ -396,7 +407,7 @@ namespace FlightNode.Identity.UnitTests.Domain.Logic
             public void ConfirmSendsEmailToNewUserWithCorrectSubject()
             {
                 SetupMockExpectationsForSuccessfulSaveOfUserAndRoles();
-                var emailFactoryMock = SetupPendingEmailExpectation();
+                var emailFactoryMock = ExpectToSendEmail();
 
                 RunTest();
 
@@ -407,7 +418,7 @@ namespace FlightNode.Identity.UnitTests.Domain.Logic
             public void ConfirmSendsEmailToNewUserWithCorrectMessage()
             {
                 SetupMockExpectationsForSuccessfulSaveOfUserAndRoles();
-                var emailFactoryMock = SetupPendingEmailExpectation();
+                var emailFactoryMock = ExpectToSendEmail();
                 var expected = @"Thank you for creating a new account at http://localhost. Your account will remain in a pending state until an administrator approves your registration, at which point you will receive an e-mail notification to alert you to the change in status.
 
 Username: " + UserName + @"
@@ -426,17 +437,6 @@ Please visit the website's Contact form to submit any questions to the administr
                 emailFactoryMock.Verify(x => x.Send(It.Is<NotificationModel>(y => assert(y))));
             }
 
-            private Mock<IEmailNotifier> SetupPendingEmailExpectation()
-            {
-                var notifierMock = this.mockRepository.Create<IEmailNotifier>();
-                notifierMock.Setup(x => x.Send(It.IsAny<NotificationModel>()));
-
-
-                this.emailFactoryMock.Setup(x => x.CreateNotifier())
-                    .Returns(notifierMock.Object);
-
-                return notifierMock;
-            }
 
             [Fact]
             public void ConfirmUserIdIsSetInReturnObject()
@@ -459,7 +459,7 @@ Please visit the website's Contact form to submit any questions to the administr
             public void ConfirmGivenNameIsMapped()
             {
 
-                ConfirmFieldMapping(x => x.GivenName== GivenName);
+                ConfirmFieldMapping(x => x.GivenName == GivenName);
             }
 
             [Fact]
@@ -557,7 +557,7 @@ Please visit the website's Contact form to submit any questions to the administr
             {
                 mockUserManager.Setup(x => x.AddToRolesAsync(It.IsAny<int>(), It.IsAny<string[]>()))
                     .Returns(Task.Run(() => SuccessResult.Failed("asdfasd")));
-                
+
                 ExpectSuccessfulSaveOfUser();
 
                 Assert.Throws<UserException>(() => RunTest());
@@ -754,7 +754,7 @@ Please visit the website's Contact form to submit any questions to the administr
                 SetupSuccessfulDatabaseExpectations();
 
                 RunTest();
-               
+
                 mockUserManager.Verify(x => x.GetRolesAsync(It.Is<int>(y => y == UserId)));
             }
 
@@ -834,7 +834,7 @@ Please visit the website's Contact form to submit any questions to the administr
             public void ConfirmHandlingOfErrorWhenSavingUpdatedUserRecord()
             {
                 ExpectToQueryForExistingUserRecord();
-                
+
                 mockUserManager.Setup(x => x.UpdateAsync(It.IsAny<User>()))
                     .Returns((User actual) =>
                     {
@@ -855,7 +855,7 @@ Please visit the website's Contact form to submit any questions to the administr
                 ExpectSuccessfulSaveOfUser();
                 ExpectUserIsAlreadyInARole();
 
-                
+
                 mockUserManager.Setup(x => x.RemoveFromRolesAsync(It.IsAny<int>(),
                                                                   It.IsAny<string[]>()))
                             .ReturnsAsync(IdentityResult.Failed(badStuffHappened));
@@ -875,7 +875,7 @@ Please visit the website's Contact form to submit any questions to the administr
                 ExpectUserIsAlreadyInARole();
                 ExpectToRemoveOldRoles();
 
-                
+
                 mockUserManager.Setup(x => x.AddToRolesAsync(It.IsAny<int>(),
                                                              It.IsAny<string[]>()))
                             .ReturnsAsync(IdentityResult.Failed(badStuffHappened));
@@ -1509,60 +1509,144 @@ Please visit the website's Contact form to submit any questions to the administr
             }
 
             [Fact]
-            public void UpdateTwoPeopleWhenBothExistSetsStatusToActive()
+            public void SendEmailUsingRegisteredAddressAndName()
+            {
+                // Arrange
+                var ids = new List<int>() { UserId };
+                var expected = GivenName + " " + FamilyName + " <" + Email + ">";
+
+                ExpectToLookupUser(UserId);
+                ExpectSuccessfulUserUpdate();
+                var notifierMock = ExpectToSendEmail();
+
+                // Act
+                RunTest(ids);
+
+                // Assert
+                notifierMock.Verify(x => x.Send(It.Is<NotificationModel>(y => y.To == expected)));
+            }
+
+            [Fact]
+            public void SendEmailUsingCustomizedMessage()
+            {
+                // Arrange
+                var ids = new List<int>() { UserId };
+                const string expected = @"Your account registration at FlightNode has been approved, and you can now start entering data. 
+
+Username: " + UserName + @"
+";
+
+                ExpectToLookupUser(UserId);
+                ExpectSuccessfulUserUpdate();
+                var notifierMock = ExpectToSendEmail();
+
+                // Act
+                RunTest(ids);
+
+                // Assert
+                notifierMock.Verify(x => x.Send(It.Is<NotificationModel>(y => y.Body == expected)));
+            }
+
+            //" user registration has been approved";
+
+
+            [Fact]
+            public void SendEmailUsingCorrectSubject()
+            {
+                // Arrange
+                var ids = new List<int>() { UserId };
+                const string expected = "FlightNode user registration has been approved";
+
+                ExpectToLookupUser(UserId);
+                ExpectSuccessfulUserUpdate();
+                var notifierMock = ExpectToSendEmail();
+
+                // Act
+                RunTest(ids);
+
+                // Assert
+                notifierMock.Verify(x => x.Send(It.Is<NotificationModel>(y => y.Subject == expected)));
+            }
+
+            private void ExpectSuccessfulUserUpdate()
+            {
+                mockUserManager.Setup(x => x.UpdateAsync(It.IsAny<User>()))
+                    .Returns(Task.Run(() => SuccessResult.Create()));
+            }
+
+            private void ExpectToLookupUser(int id)
+            {
+                mockUserManager.Setup(x => x.FindByIdAsync(id))
+                   .Returns(Task.Run(() => new User {
+                       Id = id,
+                       Active = "pending",
+                       Email = Email,
+                       GivenName = GivenName,
+                       FamilyName = FamilyName,
+                       UserName = UserName
+                   }));
+            }
+
+            [Fact]
+            public void UpdateTwoPeopleWhenBothExistSetsFirstStatusToActive()
             {
                 //
                 // Arrange
                 var ids = new List<int>() { 14, 43 };
 
-                mockUserManager.Setup(x => x.FindByIdAsync(It.Is<int>(y => y == ids[0])))
-                    .Returns(Task.Run(() => new User { Id = ids[0], Active = "pending" }));
-
-                mockUserManager.Setup(x => x.FindByIdAsync(It.Is<int>(y => y == ids[1])))
-                    .Returns(Task.Run(() => new User { Id = ids[1], Active = "pending" }));
-
-                mockUserManager.Setup(x => x.UpdateAsync(It.Is<User>(y => y.Id == ids[0])))
-                    .Callback((User actual) => { Assert.Equal("active", actual.Active); })
-                    .Returns(Task.Run(() => SuccessResult.Create()));
-
-                mockUserManager.Setup(x => x.UpdateAsync(It.Is<User>(y => y.Id == ids[1])))
-                    .Callback((User actual) => { Assert.Equal("active", actual.Active); })
-                    .Returns(Task.Run(() => SuccessResult.Create()));
+                ids.ForEach(x => ExpectToLookupUser(x));
+                ExpectSuccessfulUserUpdate();
+                ExpectToSendEmail();
 
                 //
                 // Act
                 RunTest(ids);
 
-                // nothing to Assert                
+                // Assert
+                mockUserManager.Verify(x => x.UpdateAsync(It.Is<User>(y => y.Id == ids[0] && y.Active == "active")));
+            }
+
+            [Fact]
+            public void UpdateTwoPeopleWhenBothExistSetsSecondStatusToActive()
+            {
+                //
+                // Arrange
+                var ids = new List<int>() { 14, 43 };
+
+                ids.ForEach(x => ExpectToLookupUser(x));
+                ExpectSuccessfulUserUpdate();
+
+                ExpectToSendEmail();
+
+                //
+                // Act
+                RunTest(ids);
+
+                //
+                // Assert
+                mockUserManager.Verify(x => x.UpdateAsync(It.Is<User>(y => y.Id == ids[1] && y.Active == "active")));
             }
 
 
             [Fact]
-            public void UpdateTwoPeopleWhenBothExistSetsUnlocksAccount()
+            public void UpdateuserSetsUnlocksAccount()
             {
                 //
                 // Arrange
-                var ids = new List<int>() { 14, 43 };
+                var ids = new List<int>() { UserId };
 
-                mockUserManager.Setup(x => x.FindByIdAsync(It.Is<int>(y => y == ids[0])))
-                    .Returns(Task.Run(() => new User { Id = ids[0], Active = "pending", LockoutEnabled = true }));
+                ExpectToLookupUser(UserId);
+                ExpectSuccessfulUserUpdate();
 
-                mockUserManager.Setup(x => x.FindByIdAsync(It.Is<int>(y => y == ids[1])))
-                    .Returns(Task.Run(() => new User { Id = ids[1], Active = "pending", LockoutEnabled = true }));
-
-                mockUserManager.Setup(x => x.UpdateAsync(It.Is<User>(y => y.Id == ids[0])))
-                    .Callback((User actual) => { Assert.False(actual.LockoutEnabled); })
-                    .Returns(Task.Run(() => SuccessResult.Create()));
-
-                mockUserManager.Setup(x => x.UpdateAsync(It.Is<User>(y => y.Id == ids[1])))
-                    .Callback((User actual) => { Assert.False(actual.LockoutEnabled); })
-                    .Returns(Task.Run(() => SuccessResult.Create()));
+                ExpectToSendEmail();
 
                 //
                 // Act
                 RunTest(ids);
 
-                // nothing to Assert                
+                //
+                // Assert
+                mockUserManager.Verify(x => x.UpdateAsync(It.Is<User>(y => y.Id == ids[1] && y.LockoutEnabled)));        
             }
 
             [Fact]
@@ -1571,21 +1655,21 @@ Please visit the website's Contact form to submit any questions to the administr
 
                 var ids = new List<int>() { 14, 43 };
 
-                mockUserManager.Setup(x => x.FindByIdAsync(It.Is<int>(y => y == ids[0])))
+                mockUserManager.Setup(x => x.FindByIdAsync(ids[0]))
                     .Returns(Task.Run(() => null as User));
 
-                mockUserManager.Setup(x => x.FindByIdAsync(It.Is<int>(y => y == ids[1])))
-                    .Returns(Task.Run(() => new User { Id = ids[1], Active = "pending" }));
+                ExpectToLookupUser(ids[1]);
+                ExpectSuccessfulUserUpdate();
 
-                mockUserManager.Setup(x => x.UpdateAsync(It.Is<User>(y => y.Id == ids[1])))
-                    .Callback((User actual) => { Assert.Equal("active", actual.Active); })
-                    .Returns(Task.Run(() => SuccessResult.Create()));
+                ExpectToSendEmail();
 
                 //
                 // Act
                 RunTest(ids);
 
-                // nothing to Assert
+                //
+                // Assert
+                mockUserManager.Verify(x => x.UpdateAsync(It.Is<User>(y => y.Id == ids[1])));
             }
 
             [Fact]
@@ -1594,22 +1678,21 @@ Please visit the website's Contact form to submit any questions to the administr
 
                 var ids = new List<int>() { 14, 43 };
 
-
-                mockUserManager.Setup(x => x.FindByIdAsync(It.Is<int>(y => y == ids[0])))
-                    .Returns(Task.Run(() => new User { Id = ids[0], Active = "pending" }));
-
-                mockUserManager.Setup(x => x.FindByIdAsync(It.Is<int>(y => y == ids[1])))
+                mockUserManager.Setup(x => x.FindByIdAsync( ids[1]))
                     .Returns(Task.Run(() => null as User));
+                
+                ExpectToLookupUser(ids[0]);
+                ExpectSuccessfulUserUpdate();
 
-                mockUserManager.Setup(x => x.UpdateAsync(It.Is<User>(y => y.Id == ids[0])))
-                    .Callback((User actual) => { Assert.Equal("active", actual.Active); })
-                    .Returns(Task.Run(() => SuccessResult.Create()));
+                ExpectToSendEmail();
 
                 //
                 // Act
                 RunTest(ids);
 
-                // nothing to Assert
+                //
+                // Assert
+                mockUserManager.Verify(x => x.UpdateAsync(It.Is<User>(y => y.Id == ids[0])));
             }
 
 
@@ -1620,25 +1703,21 @@ Please visit the website's Contact form to submit any questions to the administr
 
                 var ids = new List<int>() { 14, 43 };
 
-                mockUserManager.Setup(x => x.FindByIdAsync(It.Is<int>(y => y == ids[0])))
-                    .Returns(Task.Run(() => new User { Id = ids[0], Active = "pending" }));
+                ids.ForEach(x => ExpectToLookupUser(x));
 
-                mockUserManager.Setup(x => x.FindByIdAsync(It.Is<int>(y => y == ids[1])))
-                    .Returns(Task.Run(() => new User { Id = ids[1], Active = "pending" }));
-
-                mockUserManager.Setup(x => x.UpdateAsync(It.Is<User>(y => y.Id == ids[0])))
-                    .Callback((User actual) => { Assert.Equal("active", actual.Active); })
+                ExpectSuccessfulUserUpdate();
+                mockUserManager.Setup(x => x.UpdateAsync(It.Is<User>(y=> y.Id == ids[0])))
                     .Returns(Task.Run(() => new IdentityResult("errorrrrrrr")));
 
-                mockUserManager.Setup(x => x.UpdateAsync(It.Is<User>(y => y.Id == ids[1])))
-                    .Callback((User actual) => { Assert.Equal("active", actual.Active); })
-                    .Returns(Task.Run(() => SuccessResult.Create()));
+                ExpectToSendEmail();
 
                 //
                 // Act
                 RunTest(ids);
 
-                // nothing to Assert
+                //
+                // Assert
+                mockUserManager.Verify(x => x.UpdateAsync(It.Is<User>(y => y.Id == ids[1])));
             }
 
 
@@ -1648,26 +1727,21 @@ Please visit the website's Contact form to submit any questions to the administr
             {
 
                 var ids = new List<int>() { 14, 43 };
+                ids.ForEach(x => ExpectToLookupUser(x));
 
-                mockUserManager.Setup(x => x.FindByIdAsync(It.Is<int>(y => y == ids[0])))
-                    .Returns(Task.Run(() => new User { Id = ids[0], Active = "pending" }));
-
-                mockUserManager.Setup(x => x.FindByIdAsync(It.Is<int>(y => y == ids[1])))
-                    .Returns(Task.Run(() => new User { Id = ids[1], Active = "pending" }));
-
-                mockUserManager.Setup(x => x.UpdateAsync(It.Is<User>(y => y.Id == ids[0])))
-                    .Callback((User actual) => { Assert.Equal("active", actual.Active); })
-                    .Returns(Task.Run(() => SuccessResult.Create()));
-
+                ExpectSuccessfulUserUpdate();
                 mockUserManager.Setup(x => x.UpdateAsync(It.Is<User>(y => y.Id == ids[1])))
-                    .Callback((User actual) => { Assert.Equal("active", actual.Active); })
                     .Returns(Task.Run(() => new IdentityResult("errorrrrrrr")));
+                
+                ExpectToSendEmail();
 
                 //
                 // Act
                 RunTest(ids);
 
-                // nothing to Assert
+                //
+                // Assert
+                mockUserManager.Verify(x => x.UpdateAsync(It.Is<User>(y => y.Id == ids[0])));
             }
 
 

@@ -2,6 +2,7 @@
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.EntityFramework;
 using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 using System.Security.Claims;
 using System.Threading.Tasks;
 
@@ -9,9 +10,10 @@ namespace FlightNode.Identity.Domain.Entities
 {
     public class User : IdentityUser<int, UserLogin, UserRole, UserClaim>, IEntity
     {
-        public const string STATUS_ACTIVE = "active";
-        public const string STATUS_PENDING = "pending";
-        public const string STATUS_INACTIVE = "inactive";
+        public const string ToUserPattern = "{0} {1} <{2}>";
+        public const string StatusActive = "active";
+        public const string StatusPending = "pending";
+        public const string StatusInactive = "inactive";
 
         // Exists so that other projects don't have to reference Identity framework.
         public override int Id
@@ -57,7 +59,7 @@ namespace FlightNode.Identity.Domain.Entities
         /// </summary>
         public User()
         {
-            Active = STATUS_INACTIVE;
+            Active = StatusInactive;
         }
 
         /// <summary>
@@ -77,6 +79,15 @@ namespace FlightNode.Identity.Domain.Entities
             userIdentity.AddClaim(new Claim("displayName", this.DisplayName));
 
             return userIdentity;
+        }
+
+
+        public string FormattedEmail
+        {
+            get
+            {
+                return string.Format(CultureInfo.InvariantCulture, GivenName, FamilyName, Email);
+            }
         }
     }
 

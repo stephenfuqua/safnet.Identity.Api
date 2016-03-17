@@ -6,6 +6,7 @@ using FlightNode.Identity.Domain.Interfaces;
 using FlightNode.Identity.Services.Models;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 
 namespace FlightNode.Identity.Domain.Logic
@@ -23,6 +24,11 @@ Username: {1}
 Password: {2}
 
 Please visit the website's Contact form to submit any questions to the administrators.
+";
+        public static readonly string ApprovedEmailSubject = Properties.Settings.Default.SiteName + " user registration has been approved";
+        public const string AccountApprovedEmailBodyPattern = @"Your account registration at {0} has been approved, and you can now start entering data. 
+
+Username: {1}
 ";
 
         private IUserPersistence _userManager;
@@ -53,7 +59,7 @@ Please visit the website's Contact form to submit any questions to the administr
         public IEnumerable<UserModel> FindAll()
         {
             return _userManager.Users
-                .Where(x => x.Active == User.STATUS_ACTIVE)
+                .Where(x => x.Active == User.StatusActive)
                 .ToList()
                 .Select(Map);
         }
@@ -61,7 +67,7 @@ Please visit the website's Contact form to submit any questions to the administr
         public IEnumerable<PendingUserModel> FindAllPending()
         {
             return _userManager.Users
-                .Where(x => x.Active == User.STATUS_PENDING)
+                .Where(x => x.Active == User.StatusPending)
                 .ToList()
                 .Select(x => new PendingUserModel
                 {
@@ -101,7 +107,7 @@ Please visit the website's Contact form to submit any questions to the administr
                 GivenName = input.GivenName,
                 FamilyName = input.FamilyName,
                 LockedOut = input.LockoutEnabled,
-                Active = input.Active == User.STATUS_ACTIVE,
+                Active = input.Active == User.StatusActive,
                 MailingAddress = input.MailingAddress,
                 City = input.City,
                 State = input.State,
@@ -170,16 +176,15 @@ Please visit the website's Contact form to submit any questions to the administr
 
             input.UserId = SavePendingUserRecord(input, record);
 
-            SendPendingUserEmail(input);
+            SendPendingUserEmail(record, input);
 
             return input;
         }
 
-        private void SendPendingUserEmail(UserModel input)
+        private void SendPendingUserEmail(User record, UserModel dto)
         {
-            var to = string.Format("{0} {1} <{2}>", input.GivenName, input.FamilyName, input.Email);
-            var body = string.Format(PendingUserEmailBodyPattern, Properties.Settings.Default.IssuerUrl, input.UserName, input.Password);
-            var message = new NotificationModel(to, PendingUserEmailSubject, body);
+            var body = string.Format(PendingUserEmailBodyPattern, Properties.Settings.Default.IssuerUrl, record.UserName, dto.Password);
+            var message = new NotificationModel(record.FormattedEmail, PendingUserEmailSubject, body);
 
             _emailFactory.CreateNotifier()
                 .Send(message);
@@ -189,7 +194,7 @@ Please visit the website's Contact form to submit any questions to the administr
         {
             // Don't trust the client to provide these three important values!
             record.LockoutEnabled = true;
-            record.Active = User.STATUS_PENDING;
+            record.Active = User.StatusPending;
             var roles = new[] { "Reporter" };
 
             return Create(record, roles, input.Password);
@@ -220,7 +225,7 @@ Please visit the website's Contact form to submit any questions to the administr
         private User Map(UserModel input, User record = null)
         {
             record = record ?? new User();
-            record.Active = input.Active ? User.STATUS_ACTIVE : User.STATUS_INACTIVE;
+            record.Active = input.Active ? User.StatusActive : User.StatusInactive;
             record.Email = input.Email;
             record.FamilyName = input.FamilyName;
             record.GivenName = input.GivenName;
@@ -269,14 +274,35 @@ Please visit the website's Contact form to submit any questions to the administr
 
                 if (user != null)
                 {
-                    user.Active = User.STATUS_ACTIVE;
-                    user.LockoutEnabled = false;
+                    // TODO: look into async processing using WhenAny
+                    // https://msdn.microsoft.com/en-us/library/jj155756.aspx
 
-                    var updateResult = _userManager.UpdateAsync(user).Result;
+                    ApproveSingleUser(user);
+                    SendApprovalEmail(user);
                 }
                 // Ignore else case - likely implies some manipulation of the input.
                 // Otherwise, doesn't really matter. The record will show up in the list again.
             }
+        }
+
+        private void SendApprovalEmail(User user)
+        {
+            var message = new NotificationModel(
+                user.FormattedEmail,
+                ApprovedEmailSubject,
+                string.Format(CultureInfo.InvariantCulture, AccountApprovedEmailBodyPattern, Properties.Settings.Default.SiteName, user.UserName)
+                );
+
+            _emailFactory.CreateNotifier()
+                .Send(message);
+        }
+
+        private void ApproveSingleUser(User user)
+        {
+            user.Active = User.StatusActive;
+            user.LockoutEnabled = false;
+
+            var updateResult = _userManager.UpdateAsync(user).Result;
         }
     }
 }
