@@ -10,7 +10,7 @@ using System.Linq;
 namespace FlightNode.Identity.Domain.Logic
 {
 
-    public class UserDomainManager : DomainLogic, IUserDomainManager
+    public class UserDomainManager : IUserDomainManager
     {
 
         private Interfaces.IUserPersistence _userManager;
