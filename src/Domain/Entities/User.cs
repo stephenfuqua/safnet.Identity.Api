@@ -86,7 +86,7 @@ namespace FlightNode.Identity.Domain.Entities
         {
             get
             {
-                return string.Format(CultureInfo.InvariantCulture, GivenName, FamilyName, Email);
+                return string.Format(CultureInfo.InvariantCulture, ToUserPattern, GivenName, FamilyName, Email);
             }
         }
     }

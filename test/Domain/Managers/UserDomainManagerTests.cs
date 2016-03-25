@@ -333,6 +333,8 @@ namespace FlightNode.Identity.UnitTests.Domain.Logic
 
             private void SetupMockExpectationsForSuccessfulSaveOfUserAndRoles()
             {
+                ExpectToSendEmail();
+
                 ExpectSuccessfulSaveOfRoles();
 
                 ExpectSuccessfulSaveOfUser();
@@ -357,7 +359,7 @@ namespace FlightNode.Identity.UnitTests.Domain.Logic
 
             private void ConfirmFieldMapping(Func<User, bool> assert)
             {
-
+                ExpectToSendEmail();
                 SetupMockExpectationsForSuccessfulSaveOfUserAndRoles();
 
                 RunTest();
@@ -1588,7 +1590,7 @@ Username: " + UserName + @"
             }
 
             [Fact]
-            public void UpdateTwoPeopleWhenBothExistSetsFirstStatusToActive()
+            public void ApproveTwoPeopleWhenBothExistSetsFirstStatusToActive()
             {
                 //
                 // Arrange
@@ -1607,7 +1609,7 @@ Username: " + UserName + @"
             }
 
             [Fact]
-            public void UpdateTwoPeopleWhenBothExistSetsSecondStatusToActive()
+            public void ApproveTwoPeopleWhenBothExistSetsSecondStatusToActive()
             {
                 //
                 // Arrange
@@ -1629,7 +1631,7 @@ Username: " + UserName + @"
 
 
             [Fact]
-            public void UpdateuserSetsUnlocksAccount()
+            public void UnlocksAccount()
             {
                 //
                 // Arrange
@@ -1646,7 +1648,7 @@ Username: " + UserName + @"
 
                 //
                 // Assert
-                mockUserManager.Verify(x => x.UpdateAsync(It.Is<User>(y => y.Id == ids[1] && y.LockoutEnabled)));        
+                mockUserManager.Verify(x => x.UpdateAsync(It.Is<User>(y => y.Id == UserId && !y.LockoutEnabled)));        
             }
 
             [Fact]
