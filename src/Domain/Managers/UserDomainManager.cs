@@ -1,35 +1,65 @@
 ﻿using FlightNode.Common.BaseClasses;
 using FlightNode.Common.Exceptions;
+using FlightNode.Common.Utility;
 using FlightNode.Identity.Domain.Entities;
 using FlightNode.Identity.Domain.Interfaces;
 using FlightNode.Identity.Services.Models;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 
 namespace FlightNode.Identity.Domain.Logic
 {
-
+    /// <summary>
+    /// Domain / business logic for Users.
+    /// </summary>
     public class UserDomainManager : IUserDomainManager
     {
 
-        private Interfaces.IUserPersistence _userManager;
+        public static readonly string PendingUserEmailSubject = Properties.Settings.Default.SiteName + " pending user registration received";
+        public const string PendingUserEmailBodyPattern = @"Thank you for creating a new account at {0}. Your account will remain in a pending state until an administrator approves your registration, at which point you will receive an e-mail notification to alert you to the change in status.
 
-        public UserDomainManager(Interfaces.IUserPersistence manager)
+Username: {1}
+Password: {2}
+
+Please visit the website's Contact form to submit any questions to the administrators.
+";
+        public static readonly string ApprovedEmailSubject = Properties.Settings.Default.SiteName + " user registration has been approved";
+        public const string AccountApprovedEmailBodyPattern = @"Your account registration at {0} has been approved, and you can now start entering data. 
+
+Username: {1}
+";
+
+        private IUserPersistence _userManager;
+        private IEmailFactory _emailFactory;
+
+
+        /// <summary>
+        /// Creates a new instance of <see cref="UserDomainManager"/>.
+        /// </summary>
+        /// <param name="manager">Instance of <see cref="Interfaces.IUserPersistence"/></param>
+        /// <param name="emailFactory">Instance of <see cref="IEmailFactory"/></param>
+        public UserDomainManager(IUserPersistence manager, IEmailFactory emailFactory)
         {
             if (manager == null)
             {
                 throw new ArgumentNullException("manager");
             }
+            if (emailFactory == null)
+            {
+                throw new ArgumentNullException("emailFactory");
+            }
 
             _userManager = manager;
+            _emailFactory = emailFactory;
         }
 
 
         public IEnumerable<UserModel> FindAll()
         {
             return _userManager.Users
-                .Where(x => x.Active == User.STATUS_ACTIVE)
+                .Where(x => x.Active == User.StatusActive)
                 .ToList()
                 .Select(Map);
         }
@@ -37,7 +67,7 @@ namespace FlightNode.Identity.Domain.Logic
         public IEnumerable<PendingUserModel> FindAllPending()
         {
             return _userManager.Users
-                .Where(x => x.Active == User.STATUS_PENDING)
+                .Where(x => x.Active == User.StatusPending)
                 .ToList()
                 .Select(x => new PendingUserModel
                 {
@@ -77,7 +107,7 @@ namespace FlightNode.Identity.Domain.Logic
                 GivenName = input.GivenName,
                 FamilyName = input.FamilyName,
                 LockedOut = input.LockoutEnabled,
-                Active = input.Active == User.STATUS_ACTIVE,
+                Active = input.Active == User.StatusActive,
                 MailingAddress = input.MailingAddress,
                 City = input.City,
                 State = input.State,
@@ -144,14 +174,30 @@ namespace FlightNode.Identity.Domain.Logic
         {
             var record = Map(input);
 
-            // Don't trust the client to provide these three important values!
-            record.LockoutEnabled = true;
-            record.Active = User.STATUS_PENDING;
-            var roles = new[] { "Reporter" };
+            input.UserId = SavePendingUserRecord(input, record);
 
-            input.UserId = Create(record, roles, input.Password);
+            SendPendingUserEmail(record, input);
 
             return input;
+        }
+
+        private void SendPendingUserEmail(User record, UserModel dto)
+        {
+            var body = string.Format(PendingUserEmailBodyPattern, Properties.Settings.Default.IssuerUrl, record.UserName, dto.Password);
+            var message = new NotificationModel(record.FormattedEmail, PendingUserEmailSubject, body);
+
+            _emailFactory.CreateNotifier()
+                .Send(message);
+        }
+
+        private int SavePendingUserRecord(UserModel input, User record)
+        {
+            // Don't trust the client to provide these three important values!
+            record.LockoutEnabled = true;
+            record.Active = User.StatusPending;
+            var roles = new[] { "Reporter" };
+
+            return Create(record, roles, input.Password);
         }
 
         private int Create(User record, string[] roles, string password)
@@ -179,7 +225,7 @@ namespace FlightNode.Identity.Domain.Logic
         private User Map(UserModel input, User record = null)
         {
             record = record ?? new User();
-            record.Active = input.Active ? User.STATUS_ACTIVE : User.STATUS_INACTIVE;
+            record.Active = input.Active ? User.StatusActive : User.StatusInactive;
             record.Email = input.Email;
             record.FamilyName = input.FamilyName;
             record.GivenName = input.GivenName;
@@ -228,14 +274,35 @@ namespace FlightNode.Identity.Domain.Logic
 
                 if (user != null)
                 {
-                    user.Active = User.STATUS_ACTIVE;
-                    user.LockoutEnabled = false;
+                    // TODO: look into async processing using WhenAny
+                    // https://msdn.microsoft.com/en-us/library/jj155756.aspx
 
-                    var updateResult = _userManager.UpdateAsync(user).Result;
+                    ApproveSingleUser(user);
+                    SendApprovalEmail(user);
                 }
                 // Ignore else case - likely implies some manipulation of the input.
                 // Otherwise, doesn't really matter. The record will show up in the list again.
             }
+        }
+
+        private void SendApprovalEmail(User user)
+        {
+            var message = new NotificationModel(
+                user.FormattedEmail,
+                ApprovedEmailSubject,
+                string.Format(CultureInfo.InvariantCulture, AccountApprovedEmailBodyPattern, Properties.Settings.Default.SiteName, user.UserName)
+                );
+
+            _emailFactory.CreateNotifier()
+                .Send(message);
+        }
+
+        private void ApproveSingleUser(User user)
+        {
+            user.Active = User.StatusActive;
+            user.LockoutEnabled = false;
+
+            var updateResult = _userManager.UpdateAsync(user).Result;
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using FlightNode.Identity.Domain.Entities;
+﻿using FlightNode.Common.Utility;
+using FlightNode.Identity.Domain.Entities;
 using FlightNode.Identity.Infrastructure.Persistence;
 using Microsoft.AspNet.Identity;
 using Microsoft.Owin;
@@ -75,6 +76,7 @@ namespace FlightNode.Identity.Services.Providers
 
             container.RegisterType<IdentityDbContext>();
             container.RegisterType(typeof(IUserStore<User, int>), typeof(AppUserStore));
+            container.RegisterType<IEmailFactory, EmailFactory>();
 
             return container;
         }

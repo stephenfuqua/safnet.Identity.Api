@@ -72,6 +72,14 @@
       <HintPath>..\..\Packages\Newtonsoft.Json.8.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="Ploeh.AutoFixture">
+      <HintPath>..\..\Packages\AutoFixture.3.40.1\lib\net40\Ploeh.AutoFixture.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Ploeh.AutoFixture.AutoMoq">
+      <HintPath>..\..\Packages\AutoFixture.AutoMoq.3.40.1\lib\net40\Ploeh.AutoFixture.AutoMoq.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Core" />
@@ -136,6 +144,10 @@
     <ProjectReference Include="..\..\Common\src\FlightNode.Common\FlightNode.Common.csproj">
       <Project>{05902c28-0900-4902-9300-0540eedac9c1}</Project>
       <Name>FlightNode.Common</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Common\test\FlightNode.Common.UnitTests\FlightNode.Common.UnitTests.csproj">
+      <Project>{986e3868-2878-4cf8-afa1-1ced803ea044}</Project>
+      <Name>FlightNode.Common.UnitTests</Name>
     </ProjectReference>
     <ProjectReference Include="..\src\FlightNode.Identity.csproj">
       <Project>{8efa7367-e1a8-4ca3-8f20-91ce6fe38f7f}</Project>
