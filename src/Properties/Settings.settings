@@ -20,5 +20,8 @@
     <Setting Name="SiteName" Type="System.String" Scope="Application">
       <Value Profile="(Default)">FlightNode</Value>
     </Setting>
+    <Setting Name="ContactEmail" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">birds@safnet.com</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

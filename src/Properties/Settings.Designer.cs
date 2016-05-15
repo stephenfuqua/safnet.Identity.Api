@@ -76,5 +76,14 @@ namespace FlightNode.Identity.Properties {
                 return ((string)(this["SiteName"]));
             }
         }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("birds@safnet.com")]
+        public string ContactEmail {
+            get {
+                return ((string)(this["ContactEmail"]));
+            }
+        }
     }
 }

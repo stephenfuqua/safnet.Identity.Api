@@ -75,8 +75,10 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
+    <Compile Include="Services\Controllers\ContactController.cs" />
     <Compile Include="Services\Controllers\RolesController.cs" />
     <Compile Include="Services\Controllers\UsersController.cs" />
+    <Compile Include="Services\Models\EmailModel.cs" />
     <Compile Include="Services\Models\IdList.cs" />
     <Compile Include="Services\Models\PendingUserModel.cs" />
     <Compile Include="Services\Models\RoleModel.cs" />
@@ -106,6 +108,11 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="AngleSharp, Version=0.9.5.41771, Culture=neutral, PublicKeyToken=e83494dcdc6d31ea, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Packages\AngleSharp.0.9.5\lib\net45\AngleSharp.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="EmitMapper">
       <HintPath>..\..\Packages\EmitMapper.1.0.0\lib\EmitMapper.dll</HintPath>
       <Private>True</Private>
@@ -120,6 +127,11 @@
     </Reference>
     <Reference Include="Flurl">
       <HintPath>..\..\Packages\Flurl.1.0.10\lib\portable-net40+sl50+win+wpa81+wp80+MonoAndroid10+MonoTouch10\Flurl.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="HtmlSanitizer, Version=3.0.0.0, Culture=neutral, PublicKeyToken=61c49a1a9e79cc28, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Packages\HtmlSanitizer.3.2.103\lib\net45\HtmlSanitizer.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="log4net, Version=1.2.15.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
