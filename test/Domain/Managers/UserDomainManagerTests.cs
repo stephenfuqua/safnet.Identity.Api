@@ -67,7 +67,8 @@ namespace FlightNode.Identity.UnitTests.Domain.Logic
             protected Mock<IEmailNotifier> ExpectToSendEmail()
             {
                 var notifierMock = this.mockRepository.Create<IEmailNotifier>();
-                notifierMock.Setup(x => x.SendAsync(It.IsAny<NotificationModel>()));
+                notifierMock.Setup(x => x.SendAsync(It.IsAny<NotificationModel>()))
+                    .Returns(Task.Run(() => SuccessResult.Create()));
 
 
                 this.emailFactoryMock.Setup(x => x.CreateNotifier())

@@ -274,8 +274,8 @@ Username: {1}
 
                 if (user != null)
                 {
-                    ApproveSingleUser(user).Start();
-                    SendApprovalEmail(user).Start();
+                    ApproveSingleUser(user);
+                    SendApprovalEmail(user);
                 }
                 // Ignore else case - likely implies some manipulation of the input.
                 // Otherwise, doesn't really matter. The record will show up in the list again.
