@@ -1,6 +1,9 @@
 using FlightNode.Identity.Domain.Entities;
 using FlightNode.Identity.Infrastructure.Persistence;
 using System.Data.Entity.Migrations;
+using System.Data.Entity.Validation;
+using System.Text;
+using System.Linq;
 
 namespace FlightNode.Identity.Migrations
 {
@@ -9,10 +12,10 @@ namespace FlightNode.Identity.Migrations
     {
         public Configuration()
         {
-            AutomaticMigrationsEnabled = false;
+            AutomaticMigrationsEnabled = true;
         }
 
-        protected override void Seed(FlightNode.Identity.Infrastructure.Persistence.IdentityDbContext context)
+        protected override void Seed(IdentityDbContext context)
         {
             // Initial Roles
             context.Roles.AddOrUpdate(r => r.Name,
@@ -21,24 +24,71 @@ namespace FlightNode.Identity.Migrations
                 new Role { Name = "Coordinator", Description = "Project coordinator" },
                 new Role { Name = "Lead", Description = "Volunteer team lead" }
             );
+            SaveChanges(context);
 
             // Initial users
-            var manager = new AppUserManager(new AppUserStore(context));
-            if (manager.FindByNameAsync("asdf").Result == null)
+
+            if (!context.Users.Any(x => x.UserName == "asdf"))
             {
+                var manager = new AppUserManager(new AppUserStore(context));
+
+                var hashed = manager.PasswordHasher.HashPassword("dirigible1");
                 var user = new User
                 {
                     UserName = "asdf",
                     Email = "ab@asfddsdfs.com",
                     GivenName = "Juana",
-                    FamilyName = "Coneja"
+                    FamilyName = "Coneja",
+                    EmailConfirmed = true,
+                    PhoneNumberConfirmed = true,
+                    TwoFactorEnabled = false,
+                    LockoutEnabled = false,
+                    AccessFailedCount = 0,
+                    PasswordHash = hashed,
+                    County = "a",
+                    City = "b",
+                    State = "c",
+                    ZipCode = "d",
+                    PhoneNumber = "e",
+                    MobilePhoneNumber = "f",
+                    Active = "active"
                 };
 
-                manager.CreateAsync(user, "dirigible1").Wait();
+                context.Users.Add(user);
+                SaveChanges(context);
 
                 manager.AddToRolesAsync(user.Id, new[] {"Administrator", "Reporter", "Coordinator", "Lead"}).Wait();
             }
- 
+
+
+
+        }
+
+        private void SaveChanges(IdentityDbContext context)
+        {
+            try
+            {
+                context.SaveChanges();
+            }
+            catch (DbEntityValidationException ex)
+            {
+                var sb = new StringBuilder();
+
+                foreach (var failure in ex.EntityValidationErrors)
+                {
+                    sb.AppendFormat("{0} failed validation\n", failure.Entry.Entity.GetType());
+                    foreach (var error in failure.ValidationErrors)
+                    {
+                        sb.AppendFormat("- {0} : {1}", error.PropertyName, error.ErrorMessage);
+                        sb.AppendLine();
+                    }
+                }
+
+                throw new DbEntityValidationException(
+                    "Entity Validation Failed - errors follow:\n" +
+                    sb.ToString(), ex
+                ); // Add the original exception as the innerException
+            }
         }
     }
 }

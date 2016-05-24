@@ -2,6 +2,7 @@
 using FlightNode.Identity.Domain.Interfaces;
 using FlightNode.Identity.Services.Controllers;
 using FlightNode.Identity.Services.Models;
+using FlightNode.Identity.Services.Providers;
 using log4net;
 using Moq;
 using System;
@@ -16,6 +17,12 @@ namespace FlightNode.Identity.UnitTests.Controllers
 {
     public class RoleControllerTests
     {
+        //[Fact]
+        //public void GenerateNewAudienceId()
+        //{
+        //    var audience = JwtFormat.AddAudience("TernProd");
+        //}
+
         public class Fixture : IDisposable
         {
             protected MockRepository Repository = new MockRepository(MockBehavior.Strict);
