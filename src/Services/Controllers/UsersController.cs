@@ -13,6 +13,7 @@ using System.Web;
 using System.Web.Http;
 using System.Collections.Generic;
 using FlightNode.Common.Utility;
+using System.Threading.Tasks;
 
 namespace FligthNode.Identity.Services.Controllers
 {
@@ -156,11 +157,11 @@ namespace FligthNode.Identity.Services.Controllers
         [Route("api/v1/users/pending")]
         [Authorize(Roles = "Administrator, Coordinator")]
         [HttpPost]
-        public IHttpActionResult Approve([FromBody]List<int> ids)
+        public async Task<IHttpActionResult> Approve([FromBody]List<int> ids)
         {
-            return WrapWithTryCatch(() =>
+            return await WrapWithTryCatchAsync(async () =>
             {
-                _manager.Approve(ids);
+                await _manager.Approve(ids);
                 return NoContent();
             });
         }

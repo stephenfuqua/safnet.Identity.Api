@@ -51,7 +51,8 @@ namespace FlightNode.Identity.Migrations
                     ZipCode = "d",
                     PhoneNumber = "e",
                     MobilePhoneNumber = "f",
-                    Active = "active"
+                    Active = "active",
+                    SecurityStamp = System.Guid.NewGuid().ToString()
                 };
 
                 context.Users.Add(user);

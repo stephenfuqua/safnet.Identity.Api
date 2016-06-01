@@ -1,5 +1,6 @@
 ﻿using FlightNode.Identity.Services.Models;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace FlightNode.Identity.Domain.Interfaces
 {
@@ -13,7 +14,7 @@ namespace FlightNode.Identity.Domain.Interfaces
         void ChangePassword(int id, PasswordModel change);
         void AdministrativePasswordChange(int userId, string newPassword);
         IEnumerable<PendingUserModel> FindAllPending();
-        void Approve(List<int> list);
+        Task Approve(List<int> list);
     }
 
 }

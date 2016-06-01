@@ -261,7 +261,7 @@ Username: {1}
             }
         }
 
-        public void Approve(List<int> ids)
+        public async Task Approve(List<int> ids)
         {
             if (ids == null)
             {
@@ -270,12 +270,12 @@ Username: {1}
 
             foreach (var id in ids)
             {
-                var user = _userManager.FindByIdAsync(id).Result;
+                var user = await  _userManager.FindByIdAsync(id);
 
                 if (user != null)
                 {
-                    ApproveSingleUser(user);
-                    SendApprovalEmail(user);
+                    await ApproveSingleUser(user);
+                    await SendApprovalEmail(user);
                 }
                 // Ignore else case - likely implies some manipulation of the input.
                 // Otherwise, doesn't really matter. The record will show up in the list again.
