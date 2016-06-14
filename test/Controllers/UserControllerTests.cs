@@ -358,7 +358,7 @@ namespace FlightNode.Identity.UnitTests.Controllers
                     {
                         Assert.Same(ids, actual);
                     });
-                return BuildSystem().Approve(ids).ExecuteAsync(new System.Threading.CancellationToken()).Result;
+                return BuildSystem().Approve(ids).Result.ExecuteAsync(new System.Threading.CancellationToken()).Result;
             }
 
             public class HappyPath : Approve
@@ -387,7 +387,7 @@ namespace FlightNode.Identity.UnitTests.Controllers
                 {
                     MockManager.Setup(x => x.Approve(It.IsAny<List<int>>()))
                             .Throws(ex);
-                    return BuildSystem().Approve(new List<int>()).ExecuteAsync(new System.Threading.CancellationToken()).Result;
+                    return BuildSystem().Approve(new List<int>()).Result.ExecuteAsync(new System.Threading.CancellationToken()).Result;
                 }
 
                 [Fact]
