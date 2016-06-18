@@ -2,7 +2,6 @@
 using FlightNode.Identity.Domain.Interfaces;
 using FlightNode.Identity.Services.Controllers;
 using FlightNode.Identity.Services.Models;
-using FlightNode.Identity.Services.Providers;
 using log4net;
 using Moq;
 using System;
@@ -11,6 +10,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Web.Http;
+using System.Web.Http.Results;
 using Xunit;
 
 namespace FlightNode.Identity.UnitTests.Controllers
@@ -76,52 +76,55 @@ namespace FlightNode.Identity.UnitTests.Controllers
                     new RoleModel()
                 };
 
-                private HttpResponseMessage RunTest()
+                private OkNegotiatedContentResult<List<RoleModel>> RunTest()
                 {
                     MockManager.Setup(x => x.FindAll())
                         .Returns(list);
-                    return BuildSystem().Get().ExecuteAsync(new System.Threading.CancellationToken()).Result;
+
+                    var result = BuildSystem().Get();
+                    return result as OkNegotiatedContentResult<List<RoleModel>>;
                 }
 
                 [Fact]
                 public void ConfirmHappyPathContent()
                 {
-                    Assert.Same(list.First(), RunTest().Content.ReadAsAsync<List<RoleModel>>().Result.First());
+                    Assert.Same(list.First(), RunTest().Content.First());
                 }
 
                 [Fact]
                 public void ConfirmHappyPathStatusCode()
                 {
-                    Assert.Equal(HttpStatusCode.OK, RunTest().StatusCode);
+                    Assert.NotNull(RunTest());
                 }
-            }
-
-            public class NoRecords :Fixture
-            {
-                private HttpResponseMessage RunTest()
-                {
-                    MockManager.Setup(x => x.FindAll())
-                        .Returns(new List<RoleModel>());
-                    return BuildSystem().Get().ExecuteAsync(new System.Threading.CancellationToken()).Result;
-                }
-
+            
                 [Fact]
                 public void ConfirmNotFoundStatusCode()
                 {
-                    Assert.Equal(HttpStatusCode.NotFound, RunTest().StatusCode);
+                    // Arrange mocks
+
+                    MockManager.Setup(x => x.FindAll())
+                        .Returns(new List<RoleModel>());
+
+                    // Act
+                    var result = BuildSystem().Get();
+
+                    // Assert
+                    Assert.IsType<NotFoundResult>(result);
                 }
             }
 
             public class ExceptionHandling : Fixture
             {
 
-                private HttpResponseMessage RunTest(Exception ex)
+                private void RunTest(Exception ex)
                 {
                     MockManager.Setup(x => x.FindAll())
                         .Throws(ex);
 
 
-                    return BuildSystem().Get().ExecuteAsync(new System.Threading.CancellationToken()).Result;
+                    var result = BuildSystem().Get();
+
+                    Assert.IsType<InternalServerErrorResult>(result);
                 }
 
                 [Fact]
@@ -130,7 +133,8 @@ namespace FlightNode.Identity.UnitTests.Controllers
                     MockLogger.Setup(x => x.Error(It.IsAny<Exception>()));
 
                     var e = new InvalidOperationException();
-                    Assert.Equal(HttpStatusCode.InternalServerError, RunTest(e).StatusCode);
+
+                    RunTest(e);
                 }
 
                 [Fact]
@@ -139,7 +143,8 @@ namespace FlightNode.Identity.UnitTests.Controllers
                     MockLogger.Setup(x => x.Error(It.IsAny<Exception>()));
 
                     var e = ServerException.HandleException<ExceptionHandling>(new Exception(), "asdf");
-                    Assert.Equal(HttpStatusCode.InternalServerError, RunTest(e).StatusCode);
+
+                    RunTest(e);
                 }
 
                 [Fact]
@@ -148,7 +153,14 @@ namespace FlightNode.Identity.UnitTests.Controllers
                     MockLogger.Setup(x => x.Debug(It.IsAny<Exception>()));
 
                     var e = new UserException("asdf");
-                    Assert.Equal(HttpStatusCode.BadRequest, RunTest(e).StatusCode);
+
+                    MockManager.Setup(x => x.FindAll())
+                        .Throws(e);
+
+
+                    var result = BuildSystem().Get();
+
+                    Assert.IsType<BadRequestErrorMessageResult>(result);
                 }
             }
         }

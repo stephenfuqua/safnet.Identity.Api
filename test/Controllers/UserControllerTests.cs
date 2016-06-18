@@ -12,7 +12,9 @@ using System.Net;
 using System.Net.Http;
 using System.Security.Claims;
 using System.Security.Principal;
+using System.Threading.Tasks;
 using System.Web.Http;
+using System.Web.Http.Results;
 using Xunit;
 
 namespace FlightNode.Identity.UnitTests.Controllers
@@ -351,14 +353,16 @@ namespace FlightNode.Identity.UnitTests.Controllers
 
         public class Approve : Fixture
         {
-            protected HttpResponseMessage RunTest(List<int> ids)
+            protected StatusCodeResult RunTest(List<int> ids)
             {
                 MockManager.Setup(x => x.Approve(It.IsAny<List<int>>()))
                     .Callback((List<int> actual) =>
                     {
                         Assert.Same(ids, actual);
-                    });
-                return BuildSystem().Approve(ids).Result.ExecuteAsync(new System.Threading.CancellationToken()).Result;
+                    })
+                    .Returns(Task.Delay(1)); 
+
+                return BuildSystem().Approve(ids).Result as StatusCodeResult;
             }
 
             public class HappyPath : Approve
@@ -999,7 +1003,6 @@ namespace FlightNode.Identity.UnitTests.Controllers
                 {
                     //
                     // Arrange
-                    const int id = 33;
                     var user = new UserModel();
 
                     MockManager.Setup(x => x.CreatePending(It.IsAny<UserModel>()))
@@ -1021,7 +1024,6 @@ namespace FlightNode.Identity.UnitTests.Controllers
                 {
                     //
                     // Arrange
-                    const int id = 33;
                     var user = new UserModel
                     {
                         Password = "asdfasd"
@@ -1047,7 +1049,6 @@ namespace FlightNode.Identity.UnitTests.Controllers
                 {
                     //
                     // Arrange
-                    const int id = 323;
                     const string email = "thisisnotvalid@something";
                     var user = new UserModel
                     {

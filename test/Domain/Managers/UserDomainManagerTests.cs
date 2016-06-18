@@ -1500,15 +1500,12 @@ Please visit the website's Contact form to submit any questions to the administr
             [Fact]
             public void NullObjectNotAllowed()
             {
-                Assert.Throws<ArgumentNullException>(() =>
-                {
-                    BuildSystem().Approve(null).Wait();
-                });
+                Assert.ThrowsAsync<ArgumentNullException>(() => BuildSystem().Approve(null));
             }
 
-            private void RunTest(List<int> ids)
+            private Task RunTest(List<int> ids)
             {
-                BuildSystem().Approve(ids).Wait();
+                return BuildSystem().Approve(ids);
             }
 
             [Fact]
@@ -1763,7 +1760,7 @@ Username: " + UserName + @"
 
                 //
                 // Act & Assert
-                Assert.Throws<InvalidOperationException>(() => RunTest(ids));
+                Assert.ThrowsAsync<InvalidOperationException>(() => RunTest(ids));
             }
 
             [Fact]
@@ -1782,7 +1779,7 @@ Username: " + UserName + @"
 
                 //
                 // Act & Assert
-                Assert.Throws<AggregateException>(() => RunTest(ids));
+                Assert.ThrowsAsync<AggregateException>(() => RunTest(ids));
             }
         }
     }
