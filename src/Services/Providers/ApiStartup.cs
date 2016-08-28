@@ -10,7 +10,6 @@ using Microsoft.Owin.Security.OAuth;
 using Microsoft.Practices.Unity;
 using Owin;
 using System;
-using System.Linq;
 using System.Reflection;
 
 namespace FlightNode.Identity.Services.Providers
