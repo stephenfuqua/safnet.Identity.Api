@@ -56,6 +56,7 @@ namespace FlightNode.Identity.Services.Providers
                 Logger.Error(ex);
                 context.SetError("Internal server error");
             }
+
         }
     }
 }
