@@ -1,6 +1,6 @@
 ﻿
-using Xunit;
 using FlightNode.Identity.Domain.Entities;
+using Xunit;
 
 namespace FlightNode.Identity.UnitTests.Domain.Entities
 {

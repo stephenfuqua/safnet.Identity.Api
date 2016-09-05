@@ -138,12 +138,35 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Controllers\UserControllerTests\Approve.cs" />
+    <Compile Include="Domain\Managers\UserDomainManagerTests\ChangeForgottenPassword.cs" />
+    <Compile Include="Controllers\UserControllerTests\ChangeOwnPassword.cs" />
+    <Compile Include="Controllers\UserControllerTests\ChangePassword.cs" />
+    <Compile Include="Controllers\UserControllerTests\Pending.cs" />
     <Compile Include="Controllers\RoleControllerTests.cs" />
-    <Compile Include="Controllers\UserControllerTests.cs" />
+    <Compile Include="Controllers\UserControllerTests\ConstructorBehavior.cs" />
+    <Compile Include="Controllers\UserControllerTests\Fixture.cs" />
+    <Compile Include="Controllers\UserControllerTests\Post.cs" />
+    <Compile Include="Controllers\UserControllerTests\Profile.cs" />
+    <Compile Include="Controllers\UserControllerTests\Put.cs" />
+    <Compile Include="Controllers\UserControllerTests\Register.cs" />
+    <Compile Include="Controllers\UserControllerTests\GetAll.cs" />
+    <Compile Include="Controllers\UserControllerTests\Get.cs" />
+    <Compile Include="Controllers\UserControllerTests\RequestPasswordChange.cs" />
     <Compile Include="Domain\Entities\RoleTests.cs" />
     <Compile Include="Domain\Entities\UserTests.cs" />
     <Compile Include="Domain\Managers\RoleDomainManagerTests.cs" />
-    <Compile Include="Domain\Managers\UserDomainManagerTests.cs" />
+    <Compile Include="Domain\Managers\UserDomainManagerTests\Approve.cs" />
+    <Compile Include="Domain\Managers\UserDomainManagerTests\ConstructorBehavior.cs" />
+    <Compile Include="Domain\Managers\UserDomainManagerTests\CreatePendingUser.cs" />
+    <Compile Include="Domain\Managers\UserDomainManagerTests\CreateUser.cs" />
+    <Compile Include="Domain\Managers\UserDomainManagerTests\FindAllPendingUsers.cs" />
+    <Compile Include="Domain\Managers\UserDomainManagerTests\FindAllUsers.cs" />
+    <Compile Include="Domain\Managers\UserDomainManagerTests\FindAParticularUserById.cs" />
+    <Compile Include="Domain\Managers\UserDomainManagerTests\Fixture.cs" />
+    <Compile Include="Domain\Managers\UserDomainManagerTests\RequestPasswordReset.cs" />
+    <Compile Include="Domain\Managers\UserDomainManagerTests\SuccessResult.cs" />
+    <Compile Include="Domain\Managers\UserDomainManagerTests\UpdateUser.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

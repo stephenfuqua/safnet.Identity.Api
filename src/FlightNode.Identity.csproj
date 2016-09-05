@@ -44,6 +44,7 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Domain\Entities\ChangeForgottenPasswordResult.cs" />
     <Compile Include="Domain\Entities\Role.cs" />
     <Compile Include="Domain\Entities\User.cs" />
     <Compile Include="Domain\Entities\UserClaim.cs" />
@@ -87,9 +88,11 @@
     <Compile Include="Services\Controllers\ContactController.cs" />
     <Compile Include="Services\Controllers\RolesController.cs" />
     <Compile Include="Services\Controllers\UsersController.cs" />
+    <Compile Include="Services\Models\ChangePasswordModel.cs" />
     <Compile Include="Services\Models\EmailModel.cs" />
     <Compile Include="Services\Models\IdList.cs" />
     <Compile Include="Services\Models\PendingUserModel.cs" />
+    <Compile Include="Services\Models\RequestPasswordResetModel.cs" />
     <Compile Include="Services\Models\RoleModel.cs" />
     <Compile Include="Services\Providers\ApiStartup.cs" />
     <Compile Include="Services\Providers\JwtFormat.cs" />

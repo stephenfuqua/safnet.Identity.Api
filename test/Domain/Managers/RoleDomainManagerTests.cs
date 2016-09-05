@@ -1,15 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Xunit;
-using Moq;
-using Microsoft.AspNet.Identity;
+﻿using FlightNode.Common.Exceptions;
+using FlightNode.Identity.Domain.Entities;
 using FlightNode.Identity.Domain.Interfaces;
 using FlightNode.Identity.Domain.Managers;
-using FlightNode.Identity.Domain.Entities;
-using FlightNode.Common.Exceptions;
+using Moq;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Xunit;
 
 namespace FlightNode.Identity.UnitTests.Domain.Managers
 {

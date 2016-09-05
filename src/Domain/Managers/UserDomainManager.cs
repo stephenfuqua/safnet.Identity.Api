@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Web;
 
 namespace FlightNode.Identity.Domain.Logic
 {
@@ -30,6 +31,10 @@ Please visit the website's Contact form to submit any questions to the administr
 
 Username: {1}
 ";
+        public static readonly string PasswordChangeRequestSubject = Properties.Settings.Default.SiteName + " Password Change Request";
+        public const string PasswordChangeRequestBodyPattern = @"Please use the followign link to change your password. You have 24 hours to reset your password, after which this URL will expire. You can request a new password again at that point to generate a new email.
+
+{0}";
 
         private IUserPersistence _userManager;
         private IEmailFactory _emailFactory;
@@ -131,7 +136,7 @@ Username: {1}
             var record = _userManager.FindByIdAsync(input.UserId).Result;
 
             record = Map(input, record);
-            
+
             var result = _userManager.UpdateAsync(record).Result;
             if (result.Succeeded)
             {
@@ -270,7 +275,7 @@ Username: {1}
 
             foreach (var id in ids)
             {
-                var user = await  _userManager.FindByIdAsync(id);
+                var user = await _userManager.FindByIdAsync(id);
 
                 if (user != null)
                 {
@@ -301,5 +306,91 @@ Username: {1}
 
             await _userManager.UpdateAsync(user);
         }
+
+        /// <summary>
+        /// Sends an e-mail containing a password reset token.
+        /// </summary>
+        /// <param name="emailAddress">Existing user's e-mail address</param>
+        /// <returns>
+        /// True if the e-mail address was found
+        /// False otherwise
+        /// </returns>
+        public async Task<bool> RequestPasswordChange(string emailAddress)
+        {
+            if (emailAddress == null)
+            {
+                throw new ArgumentNullException(nameof(emailAddress));
+            }
+            if (string.IsNullOrWhiteSpace(emailAddress))
+            {
+                throw new ArgumentException(nameof(emailAddress) + " cannot be an empty string", emailAddress);
+            }
+
+            var user = _userManager.Users.FirstOrDefault(u => u.Email == emailAddress);
+            if (user == null)
+            {
+                return false;
+            }
+
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user.Id);
+            token = HttpUtility.UrlEncode(token);
+
+            var body = string.Format(CultureInfo.InvariantCulture, PasswordChangeRequestBodyPattern, Properties.Settings.Default.PasswordChangeBaseUrl + "?token=" + token);
+
+            var message = new NotificationModel(
+               user.FormattedEmail,
+               PasswordChangeRequestSubject,
+               body
+               );
+
+            await _emailFactory.CreateNotifier()
+                .SendAsync(message);
+
+
+            return true;
+        }
+
+        public async Task<ChangeForgottenPasswordResult> ChangeForgottenPassword(string token, ChangePasswordModel input)
+        {
+            if (token == null)
+            {
+                throw new ArgumentNullException(nameof(token));
+            }
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                throw new ArgumentException(nameof(token) + " cannot be an empty string", token);
+            }
+            if (input == null)
+            {
+                throw new ArgumentNullException(nameof(input));
+            }
+
+            var user = _userManager.Users.FirstOrDefault(u => u.Email == input.EmailAddress);
+            if (user == null)
+            {
+                return ChangeForgottenPasswordResult.UserDoesNotExist;
+            }
+
+            var result = await _userManager.ResetPasswordAsync(user.Id, token, input.Password);
+
+
+
+            if (result.Succeeded)
+            {
+                return ChangeForgottenPasswordResult.Happy;
+            }
+            else if (result.Errors.First() == "Invalid token.")
+            {
+                return ChangeForgottenPasswordResult.BadToken;
+            }
+            else if (result.Errors.First().StartsWith("Passwords must"))
+            {
+                return ChangeForgottenPasswordResult.InvalidPassword;
+            }
+
+
+            throw new InvalidOperationException("Reset password request resulted in error: " + result.Errors.First());
+        }
     }
+
 }

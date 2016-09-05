@@ -14,6 +14,7 @@ using System.Web.Http;
 using System.Collections.Generic;
 using FlightNode.Common.Utility;
 using System.Threading.Tasks;
+using FlightNode.Identity.Domain.Entities;
 
 namespace FligthNode.Identity.Services.Controllers
 {
@@ -432,9 +433,75 @@ namespace FligthNode.Identity.Services.Controllers
                 });
 
                 return Ok(models);
-
-                // TODO: return NotFound() if the user doesn't exist
             });
         }
+
+        /// <summary>
+        /// Starts the password reset process, which will send an e-mail with a password reset link in it.
+        /// </summary>
+        /// <returns>
+        /// 201 Created
+        /// </returns>
+        /// <example>
+        /// POST api/v1/users/requestreset
+        /// {
+        ///     "emailAddress": "jdoe@example.com"
+        /// }
+        /// </example>
+        [Route("api/v1/users/requestreset")]
+        [HttpPost]
+        public async Task<IHttpActionResult> RequestPasswordChange([FromBody]RequestPasswordResetModel request)
+        {
+            Validate(request ?? new RequestPasswordResetModel());
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var success = await ManagerWithTokenSetup.RequestPasswordChange(request.EmailAddress);
+            if (success)
+            {
+                return Ok();
+            }
+
+            return Unprocessable();
+        }
+
+        [Route("api/v1/users/changepassword")]
+        [HttpPost]
+        public async Task<IHttpActionResult> ChangeOwnPassword([FromUri] string token, [FromBody] ChangePasswordModel change)
+        {
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                return BadRequest("Url must provide a reset token");
+            }
+
+            Validate(change ?? new ChangePasswordModel());
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+
+            var result = await ManagerWithTokenSetup.ChangeForgottenPassword(token, change);
+
+            switch (result)
+            {
+                case ChangeForgottenPasswordResult.BadToken:
+                    return Unprocessable();
+                case ChangeForgottenPasswordResult.Happy:
+                    return Ok();
+                case ChangeForgottenPasswordResult.InvalidPassword:
+                    ModelState.AddModelError("password", "complexity");
+                    return BadRequest(ModelState);
+                case ChangeForgottenPasswordResult.UserDoesNotExist:
+                    return NotFound();
+                default:
+                    // Shouldn't ever reach here, unless someone adds to the enum without handling it
+                    return InternalServerError();
+            }
+
+        }
+
     }
 }

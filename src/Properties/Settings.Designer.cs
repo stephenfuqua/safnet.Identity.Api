@@ -85,5 +85,14 @@ namespace FlightNode.Identity.Properties {
                 return ((string)(this["ContactEmail"]));
             }
         }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("http://localhost:9000/#/users/changepassword")]
+        public string PasswordChangeBaseUrl {
+            get {
+                return ((string)(this["PasswordChangeBaseUrl"]));
+            }
+        }
     }
 }

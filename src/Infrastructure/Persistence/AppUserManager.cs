@@ -50,7 +50,10 @@ namespace FlightNode.Identity.Infrastructure.Persistence
             {
                 manager.UserTokenProvider =
                     new DataProtectorTokenProvider<User, int>(
-                        dataProtectionProvider.Create("ASP.NET Identity"));
+                        dataProtectionProvider.Create("ASP.NET Identity"))
+                    {
+                        TokenLifespan = TimeSpan.FromHours(24)
+                    };
             }
             return manager;
         }
