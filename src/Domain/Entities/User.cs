@@ -105,17 +105,7 @@ namespace FlightNode.Identity.Domain.Entities
         /// </summary>
         [StringLength(10)]
         public string ZipCode { get; set; }
-
-        /// <summary>
-        /// A unique token that must be provided in order for a user to change their passwords.
-        /// </summary>
-        public string PasswordResetToken { get; set; }
-
-        /// <summary>
-        /// Expiration date for the password reset token.
-        /// </summary>
-        public DateTime? PasswordResetTokenExpirationDate { get; set; }
-
+        
         /// <summary>
         /// Creates a new <see cref="User"/>, initially in the inactive state.
         /// </summary>
