@@ -1,4 +1,5 @@
 ﻿using FlightNode.Common.Utility;
+using FlightNode.Identity.Domain.Entities;
 using FlightNode.Identity.Domain.Interfaces;
 using FlightNode.Identity.Domain.Logic;
 using Microsoft.AspNet.Identity;
@@ -28,8 +29,10 @@ namespace FlightNode.Identity.UnitTests.Domain.Managers.UserDomainManagerTests
         protected const string City = "Ctyyy";
         protected const string State = "TX";
         protected const string ZipCode = "23423";
-        protected const string OldRole = "Old";
-        protected const string NewRole = "new";
+        protected const int OldRole = 1;
+        protected static readonly string OldRoleString = RoleEnum.Administrator.ToString();
+        protected const int NewRole = 2;
+        protected static readonly string NewRoleString = RoleEnum.Reporter.ToString();
         protected const string RoleAdministrator = "Administrator";
 
         protected MockRepository MockRepository = new MockRepository(MockBehavior.Strict);

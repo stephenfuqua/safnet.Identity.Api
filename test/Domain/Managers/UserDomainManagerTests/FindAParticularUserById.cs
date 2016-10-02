@@ -113,7 +113,7 @@ namespace FlightNode.Identity.UnitTests.Domain.Managers.UserDomainManagerTests
             [Fact]
             public void ConfirmMapsRole()
             {
-                Assert.Equal(RoleAdministrator, RunTheTest().Roles.First());
+                Assert.Equal(RoleAdministrator, ((RoleEnum)RunTheTest().Role).ToString());
             }
 
             [Fact]

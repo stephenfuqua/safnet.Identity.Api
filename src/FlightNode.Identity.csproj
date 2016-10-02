@@ -46,6 +46,7 @@
   <ItemGroup>
     <Compile Include="Domain\Entities\ChangeForgottenPasswordResult.cs" />
     <Compile Include="Domain\Entities\Role.cs" />
+    <Compile Include="Domain\Entities\RoleEnum.cs" />
     <Compile Include="Domain\Entities\User.cs" />
     <Compile Include="Domain\Entities\UserClaim.cs" />
     <Compile Include="Domain\Entities\UserLogin.cs" />

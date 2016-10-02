@@ -69,9 +69,9 @@ namespace FlightNode.Identity.Services.Models
         public bool LockedOut { get; set; }
         
         /// <summary>
-        /// Roles to which this user belongs.
+        /// User's role.
         /// </summary>
-        public List<string> Roles { get; private set; }
+        public int Role { get; set; }
 
         /// <summary>
         /// Returns concatenated GivenName and FamilyName.
@@ -88,13 +88,6 @@ namespace FlightNode.Identity.Services.Models
         public string MailingAddress { get; set; }
         public string County { get; set; }
 
-
-        /// <summary>
-        /// Creates a new instance of <see cref="UserModel"/>.
-        /// </summary>
-        public UserModel()
-        {
-            Roles = new List<string>();
-        }
+        
     }
 }

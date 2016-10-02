@@ -19,10 +19,10 @@ namespace FlightNode.Identity.Migrations
         {
             // Initial Roles
             context.Roles.AddOrUpdate(r => r.Name,
-                new Role { Name = "Administrator", Description = "Administrative user" },
-                new Role { Name = "Reporter", Description = "Volunteer data reporter" },
-                new Role { Name = "Coordinator", Description = "Project coordinator" },
-                new Role { Name = "Lead", Description = "Volunteer team lead" }
+                new Role { Id = 1, Name = RoleEnum.Administrator.ToString(), Description = "Administrative user" },
+                new Role { Id = 2, Name = RoleEnum.Reporter.ToString(), Description = "Volunteer data reporter" },
+                new Role { Id = 3, Name = RoleEnum.Coordinator.ToString(), Description = "Project coordinator" },
+                new Role { Id = 4, Name = RoleEnum.Lead.ToString(), Description = "Volunteer team lead" }
             );
             SaveChanges(context);
 
@@ -58,7 +58,7 @@ namespace FlightNode.Identity.Migrations
                 context.Users.Add(user);
                 SaveChanges(context);
 
-                manager.AddToRolesAsync(user.Id, new[] {"Administrator", "Reporter", "Coordinator", "Lead"}).Wait();
+                manager.AddToRolesAsync(user.Id, new[] {"Administrator"}).Wait();
             }
 
 

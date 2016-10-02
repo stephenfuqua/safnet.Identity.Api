@@ -93,7 +93,9 @@ Username: {1}
             output = Map(record);
             if (record.Id > 0)
             {
-                output.Roles.AddRange(_userManager.GetRolesAsync(id).Result);
+                // Originally supported multiple roles, but now simplifying to support only one. Hence the pluralization.
+                var roles = _userManager.GetRolesAsync(id).Result;
+                output.Role = (int) Enum.Parse(typeof(RoleEnum), roles.FirstOrDefault());
             }
 
             return output;
@@ -146,8 +148,8 @@ Username: {1}
                 {
                     throw UserException.FromMultipleMessages(result.Errors);
                 }
-
-                result = _userManager.AddToRolesAsync(input.UserId, input.Roles.ToArray()).Result;
+                
+                result = _userManager.AddToRolesAsync(input.UserId, ParseRoleName(input)).Result;
                 if (!result.Succeeded)
                 {
                     throw UserException.FromMultipleMessages(result.Errors);
@@ -157,6 +159,11 @@ Username: {1}
             {
                 throw UserException.FromMultipleMessages(result.Errors);
             }
+        }
+
+        private string ParseRoleName(UserModel input)
+        {
+            return ((RoleEnum)input.Role).ToString();
         }
 
 
@@ -170,7 +177,7 @@ Username: {1}
 
             var record = Map(input);
 
-            input.UserId = Create(record, input.Roles.ToArray(), input.Password);
+            input.UserId = Create(record, ParseRoleName(input), input.Password);
 
             return input;
         }
@@ -200,17 +207,16 @@ Username: {1}
             // Don't trust the client to provide these three important values!
             record.LockoutEnabled = true;
             record.Active = User.StatusPending;
-            var roles = new[] { "Reporter" };
-
-            return Create(record, roles, input.Password);
+            
+            return Create(record, RoleEnum.Reporter.ToString() ,input.Password);
         }
 
-        private int Create(User record, string[] roles, string password)
+        private int Create(User record, string role, string password)
         {
             var result = _userManager.CreateAsync(record, password).Result;
             if (result.Succeeded)
             {
-                result = _userManager.AddToRolesAsync(record.Id, roles).Result;
+                result = _userManager.AddToRolesAsync(record.Id, role).Result;
 
                 if (result.Succeeded)
                 {

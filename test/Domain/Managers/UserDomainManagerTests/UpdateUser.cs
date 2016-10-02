@@ -43,7 +43,7 @@ namespace FlightNode.Identity.UnitTests.Domain.Managers.UserDomainManagerTests
                 County = County,
                 MailingAddress = Mailing
             };
-            input.Roles.Add(NewRole);
+            input.Role = NewRole;
 
             BuildSystem().Update(input);
         }
@@ -211,7 +211,7 @@ namespace FlightNode.Identity.UnitTests.Domain.Managers.UserDomainManagerTests
             RunTest();
 
             MockUserManager.Verify(x => x.RemoveFromRolesAsync(It.IsAny<int>(),
-                                                               It.Is<string[]>(y => y[0] == OldRole)));
+                                                               It.Is<string[]>(y => y[0] == OldRoleString)));
         }
 
 
@@ -234,7 +234,7 @@ namespace FlightNode.Identity.UnitTests.Domain.Managers.UserDomainManagerTests
             RunTest();
 
             MockUserManager.Verify(x => x.AddToRolesAsync(It.IsAny<int>(),
-                                                          It.Is<string[]>(y => y[0] == NewRole)));
+                                                          It.Is<string[]>(y => y[0] == NewRoleString)));
         }
 
         private void ExpectToRemoveOldRoles()
@@ -254,7 +254,7 @@ namespace FlightNode.Identity.UnitTests.Domain.Managers.UserDomainManagerTests
         private void ExpectUserIsAlreadyInARole()
         {
             MockUserManager.Setup(x => x.GetRolesAsync(It.IsAny<int>()))
-                                .ReturnsAsync(new List<string>() { OldRole });
+                                .ReturnsAsync(new List<string>() { OldRoleString });
         }
 
         private void ExpectToQueryForExistingUserRecord()
