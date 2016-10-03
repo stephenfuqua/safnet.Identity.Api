@@ -39,7 +39,8 @@ namespace FlightNode.Identity.UnitTests.Domain.Managers.UserDomainManagerTests
                 MailingAddress = Mailing,
                 City = City,
                 State = State,
-                ZipCode = ZipCode
+                ZipCode = ZipCode,
+                Role = (int)RoleEnum.Administrator
             };
 
             return BuildSystem().Create(input);
@@ -94,7 +95,7 @@ namespace FlightNode.Identity.UnitTests.Domain.Managers.UserDomainManagerTests
 
             RunTest();
 
-            MockUserManager.Verify(x => x.AddToRolesAsync(It.IsAny<int>(), It.Is<string[]>(y => y.Length == 0)));
+            MockUserManager.Verify(x => x.AddToRolesAsync(It.IsAny<int>(), "Administrator"));
         }
 
         [Fact]

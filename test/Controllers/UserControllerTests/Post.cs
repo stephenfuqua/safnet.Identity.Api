@@ -51,9 +51,7 @@ namespace FlightNode.Identity.UnitTests.Controllers.UserControllerTests
                         modified.UserId = id;
                         return modified;
                     });
-
-                const string uri = "http://localhost";
-                const string expected = "http://localhost/";
+                
 
                 //
                 // Act
@@ -72,7 +70,6 @@ namespace FlightNode.Identity.UnitTests.Controllers.UserControllerTests
             {
                 //
                 // Arrange
-                const int id = 33;
                 var user = new UserModel();
 
                 MockManager.Setup(x => x.Create(It.IsAny<UserModel>()))
@@ -94,7 +91,6 @@ namespace FlightNode.Identity.UnitTests.Controllers.UserControllerTests
             {
                 //
                 // Arrange
-                const int id = 33;
                 var user = new UserModel
                 {
                     Password = "asdfasd"
@@ -119,7 +115,6 @@ namespace FlightNode.Identity.UnitTests.Controllers.UserControllerTests
             {
                 //
                 // Arrange
-                const int id = 323;
                 const string email = "thisisnotvalid@something";
                 var user = new UserModel
                 {
