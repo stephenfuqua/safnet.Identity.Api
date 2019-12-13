@@ -1,2 +1,3 @@
-# FlightNode.Identity
-Identity management for the FlightNode platform
+# safnet.Identity.Api
+
+Identity management for the safnet projects
