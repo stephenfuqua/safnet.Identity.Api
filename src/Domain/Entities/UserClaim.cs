@@ -1,4 +1,4 @@
-﻿using FlightNode.Common.BaseClasses;
+﻿using safnet.Common.BaseClasses;
 using Microsoft.AspNet.Identity.EntityFramework;
 
 namespace FlightNode.Identity.Domain.Entities

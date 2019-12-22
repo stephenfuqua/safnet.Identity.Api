@@ -197,6 +197,5 @@ FakesAssemblies/
 
 
 
-
+*.key
 dist/
-/Identity/src/App_Data/FligthNode.Identity.xml

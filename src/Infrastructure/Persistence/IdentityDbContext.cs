@@ -1,35 +1,24 @@
-﻿using FlightNode.Identity.Domain.Entities;
-using Microsoft.AspNet.Identity.EntityFramework;
-using System.Data.Entity;
+﻿using IdentityServer4.EntityFramework.Entities;
+using Microsoft.EntityFrameworkCore;
 
-namespace FlightNode.Identity.Infrastructure.Persistence
+namespace safnet.Identity.Api.Infrastructure.Persistence
 {
     [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-    public class IdentityDbContext : IdentityDbContext<User, Role, int, UserLogin, UserRole, UserClaim>
+    public class IdentityDbContext : DbContext
     {
-        public IdentityDbContext()
-            :base(Properties.Settings.Default.IdentityConnectionString)
+        public IdentityDbContext(DbContextOptions<IdentityDbContext> options) : base(options)
+        { }
+
+        public DbSet<Client> Clients { get; set; }
+        public DbSet<ApiResource> ApiResources { get; set; }
+        public DbSet<IdentityResource> IdentityResources { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder builder)
         {
-            this.Configuration.LazyLoadingEnabled = false;
-            this.Configuration.ProxyCreationEnabled = false;
-        }
-
-        protected override void OnModelCreating(DbModelBuilder modelBuilder)
-        {
-            base.OnModelCreating(modelBuilder);
-
-            modelBuilder.Entity<User>().ToTable("Users");
-            modelBuilder.Entity<Role>().ToTable("Roles");
-            modelBuilder.Entity<UserRole>().ToTable("UserRoles");
-            modelBuilder.Entity<UserLogin>().ToTable("UserLogins");
-            modelBuilder.Entity<UserClaim>().ToTable("UserClaims");
-        }
-
-
-
-        public static IdentityDbContext Create()
-        {
-            return new IdentityDbContext();
+            builder.Entity<Client>().HasKey(m => m.Id);
+            builder.Entity<ApiResource>().HasKey(m => m.Id);
+            builder.Entity<IdentityResource>().HasKey(m => m.Id);
+            base.OnModelCreating(builder);
         }
     }
 }

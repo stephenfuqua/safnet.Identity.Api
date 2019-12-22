@@ -1,4 +1,4 @@
-﻿using FlightNode.Common.BaseClasses;
+﻿using safnet.Common.BaseClasses;
 using Microsoft.AspNet.Identity.EntityFramework;
 using System.ComponentModel.DataAnnotations.Schema;
 
