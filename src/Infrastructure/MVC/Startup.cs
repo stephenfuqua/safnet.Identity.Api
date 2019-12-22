@@ -9,14 +9,14 @@ using Microsoft.EntityFrameworkCore;
 using AutoMapper;
 using safnet.Identity.Api.Infrastructure.Persistence;
 using IdentityServer4.Stores;
+using IdentityServer4.Services;
+using Models = IdentityServer4.Models;
+using Entities = IdentityServer4.EntityFramework.Entities;
 
 namespace safnet.Identity.Api.Infrastructure.MVC
 {
     public class Startup
     {
-        private const string IdentityConnectionStringName = "Identity";
-        private const string InitialClientKeyKey = "InitialClientKey";
-        private const string InitialClientSecretKey = "InitialClientSecret";
 
         private IIdentityServerBuilder _identityServerBuilder;
 
@@ -33,18 +33,23 @@ namespace safnet.Identity.Api.Infrastructure.MVC
             ConfigureMvc();
             services.AddAutoMapper(typeof(AutoMapperProfile).Assembly);
 
-            var connectionString = Configuration.GetConnectionString(IdentityConnectionStringName);
+            var connectionString = Configuration.GetConnectionString(Constants.IdentityConnectionStringName);
 
             ConfigureIdentityServer(connectionString);
 
             DbInstaller.Run(connectionString, Configuration);
 
-            services.AddDbContext<IdentityDbContext>(options =>
-                  options.UseSqlServer(connectionString)
-              );
+            services.AddDbContext<IdentityContext>(options =>
+            {
+                options.UseSqlServer(connectionString);
+                options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
+            });
+            
+            services.AddScoped<IRepository<Entities.Client>, IdentityContext>();
+            services.AddScoped<IClientStore, ClientStore>();
 
-            services.AddScoped<IClientCrudStore, ClientStore>();
 
+            services.AddSingleton<ICache<Models.Client>, DefaultCache<Models.Client>>();
 
             void ConfigureMvc()
             {
@@ -65,7 +70,8 @@ namespace safnet.Identity.Api.Infrastructure.MVC
                         options.EnableTokenCleanup = true;
                         options.TokenCleanupInterval = 30;
                     })
-                    .AddClientStore<ClientStore>();
+                    .AddClientStore<ClientStore>()
+                    .AddClientStoreCache<CachingClientStore<ClientStore>>();
             }
         }
 
@@ -86,19 +92,10 @@ namespace safnet.Identity.Api.Infrastructure.MVC
 
             app.UseHttpsRedirection()
                .UseMvc()
-               .UseIdentityServer();
-    
+               .UseIdentityServer()
+               .UseHttpsRedirection();
 
-            var initialClientKey = Configuration.GetValue<string>(InitialClientKeyKey);
-            var initialClientSecret = Configuration.GetValue<string>(InitialClientSecretKey);
 
-            //var clientStore = app.ApplicationServices.GetService<IClientCrudStore>();
-
-            //var dbService = app.ApplicationServices.GetService<IdentityDbContext>();
-            //var mapper = app.ApplicationServices.GetService
-            //var clientStore = new ClientStore(dbService, new )
-            
-            //clientStore.AddAsync(initialClientKey, initialClientSecret).Wait();
         }
     }
 }

@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
+using safnet.Identity.Api.Infrastructure.Persistence;
+using Entities = IdentityServer4.EntityFramework.Entities;
 
 namespace safnet.Identity.Api.Controllers
 {
@@ -12,8 +14,6 @@ namespace safnet.Identity.Api.Controllers
     [ApiController]
     public class ValuesController : ControllerBase
     {
-        public ValuesController(IdentityDbContext context, IMapper mapper) { }
-
         // GET api/values
         [HttpGet]
         public ActionResult<IEnumerable<string>> Get()

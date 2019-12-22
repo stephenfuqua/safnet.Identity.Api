@@ -1,25 +1,18 @@
 ﻿using AutoMapper;
 using IdentityServer4.Models;
 using IdentityServer4.Stores;
-using System.Linq;
 using System.Threading.Tasks;
-using Entities = IdentityServer4.EntityFramework.Entities;
 
 namespace safnet.Identity.Api.Infrastructure.Persistence
 {
-    public interface IClientCrudStore : IClientStore
-    {
-        Task<Client> AddAsync(string clientKey, string clientSecret);
-    }
-
-    public class ClientStore : IClientCrudStore
+     public class ClientStore : IClientStore
     {
         private readonly IMapper _mapper;
-        private readonly IdentityDbContext _context;
+        private readonly IdentityContext _context;
         // TODO: add SeriLog
         //private readonly ILogger _logger;
 
-        public ClientStore(IdentityDbContext context, IMapper mapper)
+        public ClientStore(IdentityContext context, IMapper mapper)
         {
             _context = context;
             _mapper = mapper;
@@ -31,19 +24,5 @@ namespace safnet.Identity.Api.Infrastructure.Persistence
 
             return  _mapper.Map<Client>(entity);
         }
-
-        public async Task<Client> AddAsync(string clientKey, string clientSecret)
-        {
-            var client = new Entities.Client
-            {
-                ClientId = clientKey
-            };
-            client.ClientSecrets.Add(new Entities.ClientSecret { Value = clientSecret });
-
-            await _context.Clients.AddAsync(client);
-
-            return _mapper.Map<Client>(client);
-        }
-
     }
 }
