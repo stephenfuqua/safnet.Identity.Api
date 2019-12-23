@@ -1,5 +1,6 @@
 ﻿using System;
 using AutoMapper;
+using IdentityServer4.EntityFramework.DbContexts;
 using IdentityServer4.EntityFramework.Entities;
 using IdentityServer4.Services;
 using IdentityServer4.Stores;
@@ -70,14 +71,14 @@ namespace safnet.Identity.Api.Infrastructure.MVC
             {
                 DbInstaller.Run(conString, Configuration);
 
-                services.AddDbContext<IdentityContext>(options =>
+                services.AddDbContext<ConfigurationDbContext>(options =>
                 {
                     options.UseSqlServer(connectionString);
                     options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
                 });
 
-                services.AddTransient<IRepository<Client>, IdentityContext>();
-                services.AddTransient<IGetByClientId<Client>, IdentityContext>();
+                services.AddTransient<IRepository<Client>, ClientRepository>();
+                services.AddTransient<IGetByClientId<Client>, ClientRepository>();
             }
         }
 

@@ -48,7 +48,7 @@ namespace safnet.Identity.Api
                     Log.Information("Creating initial client key and secret");
                     var connectionString = configuration.GetConnectionString(Constants.IdentityConnectionStringName);
 
-                    var clientRepo = IdentityContext.Create(connectionString) as IRepository<Client>;
+                    var clientRepo =  ClientRepository.Create(connectionString) as IRepository<Client>;
 
                     _ = clientRepo.CreateAsync(new Client
                     {
