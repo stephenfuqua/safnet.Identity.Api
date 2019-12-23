@@ -6,18 +6,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace safnet.Identity.Api.Infrastructure.Persistence
 {
-    public interface IRepository<T>
+    public interface IGetByClientId<T>
     {
-        Task<IReadOnlyList<T>> GetAllAsync();
-        Task<T> GetAsync(int id);
-        Task<T> CreateAsync(T entity);
-        Task<T> UpdateAsync(T entity);
-        Task DeleteAsync(int id);
-        Task DeleteAsync(T entity);
+        Task<T> GetAsync(string clientId);
     }
 
     [ExcludeFromCodeCoverage]
-    public class IdentityContext : DbContext, IRepository<Client>
+    public class IdentityContext : DbContext, IRepository<Client>, IGetByClientId<Client>
     {
         public static IdentityContext Create(string connectionString)
         {
@@ -67,6 +62,11 @@ namespace safnet.Identity.Api.Infrastructure.Persistence
         async Task<Client> IRepository<Client>.GetAsync(int id)
         {
             return await Clients.FirstOrDefaultAsync(x => x.Id == id);
+        }
+
+        async Task<Client> IGetByClientId<Client>.GetAsync(string clientId)
+        {
+            return await Clients.FirstOrDefaultAsync(x => x.ClientId == clientId);
         }
 
         async Task<Client> IRepository<Client>.UpdateAsync(Client entity)

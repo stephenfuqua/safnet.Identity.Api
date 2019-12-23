@@ -32,8 +32,8 @@ namespace safnet.Identity.Api.Infrastructure.MVC
 
             var connectionString = Configuration.GetConnectionString(Constants.IdentityConnectionStringName);
 
-            ConfigureIdentityServer(connectionString);
             ConfigurePersistence(connectionString);
+            ConfigureIdentityServer(connectionString);
             ConfigureMvc();
 
             services.AddAutoMapper(typeof(AutoMapperProfile).Assembly);
@@ -47,7 +47,7 @@ namespace safnet.Identity.Api.Infrastructure.MVC
 
             void ConfigureIdentityServer(string conString)
             {
-                // TODO: configure IsserUri in IdentityServer options
+                // TODO: configure IssuerUri in IdentityServer options
                 _identityServerBuilder = services.AddIdentityServer()
                     .AddConfigurationStore(options =>
                     {
@@ -59,11 +59,11 @@ namespace safnet.Identity.Api.Infrastructure.MVC
                         options.EnableTokenCleanup = true;
                         options.TokenCleanupInterval = 30;
                     })
-                    .AddClientStore<ClientStore>()
+                    //.AddClientStore<ClientStore>()
                     .AddClientStoreCache<CachingClientStore<ClientStore>>();
 
                 services.AddSingleton<ICache<IdentityServer4.Models.Client>, DefaultCache<IdentityServer4.Models.Client>>();
-                services.AddScoped<IClientStore, ClientStore>();
+                services.AddTransient<IClientStore, ClientStore>();
             }
 
             void ConfigurePersistence(string conString)
@@ -76,7 +76,8 @@ namespace safnet.Identity.Api.Infrastructure.MVC
                     options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
                 });
 
-                services.AddScoped<IRepository<Client>, IdentityContext>();
+                services.AddTransient<IRepository<Client>, IdentityContext>();
+                services.AddTransient<IGetByClientId<Client>, IdentityContext>();
             }
         }
 

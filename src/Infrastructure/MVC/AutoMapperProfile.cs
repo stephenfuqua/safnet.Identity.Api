@@ -9,6 +9,7 @@ namespace safnet.Identity.Api.Infrastructure.MVC
         public AutoMapperProfile()
         {
             CreateMap<Models.Client, Entities.Client>();
+            CreateMap<Entities.Client, Models.Client>();
         }
     }
 }
