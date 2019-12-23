@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using IdentityServer4.EntityFramework.Entities;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using safnet.Identity.Api.Infrastructure.MVC;
 using safnet.Identity.Api.Infrastructure.Persistence;
@@ -20,34 +19,36 @@ namespace safnet.Identity.Api
         {
             Console.Title = "safnet.Identity.Api";
 
-            var logger = CreateLogger();
+            Log.Logger = CreateLogger();
             try
             {
-                var configuration = ReadAppSettings();
-                CreateInitialKeyAndSecret(configuration);
+                CreateInitialKeyAndSecret();
 
-                logger.Debug("Starting web application");
-                CreateWebHostBuilder(args).Build().Run();
+                Log.Debug("Starting web application");
+                CreateWebHostBuilder(Log.Logger)(args).Build().Run();
             }
             catch (Exception ex)
             {
-                logger.Error(ex, "Exception in application startup");
+                Log.Error(ex, "Exception in application startup");
+            }
+            finally
+            {
+                Log.CloseAndFlush();
             }
 
-            void CreateInitialKeyAndSecret(IConfigurationRoot configuration)
+            void CreateInitialKeyAndSecret()
             {
+                var configuration = ReadAppSettings();
+
                 var initialClientKey = configuration.GetValue<string>(Constants.InitialClientKeyKey);
                 var initialClientSecret = configuration.GetValue<string>(Constants.InitialClientSecretKey);
 
                 if (!string.IsNullOrWhiteSpace(initialClientKey) && !string.IsNullOrWhiteSpace(initialClientSecret))
                 {
-                    logger.Information("Creating initial client key and secret");
+                    Log.Information("Creating initial client key and secret");
                     var connectionString = configuration.GetConnectionString(Constants.IdentityConnectionStringName);
 
-                    var dbContextOptions = new DbContextOptionsBuilder<IdentityContext>();
-                    dbContextOptions.UseSqlServer(connectionString);
-                    dbContextOptions.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
-                    var clientRepo = new IdentityContext(dbContextOptions.Options) as IRepository<Client>;
+                    var clientRepo = IdentityContext.Create(connectionString) as IRepository<Client>;
 
                     _ = clientRepo.CreateAsync(new Client
                     {
@@ -64,7 +65,7 @@ namespace safnet.Identity.Api
 
             IConfigurationRoot ReadAppSettings()
             {
-                logger.Debug("Reading appsettings");
+                Log.Debug("Reading appsettings");
                 var environmentName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
                 var builder = new ConfigurationBuilder()
                     .AddJsonFile("appsettings.json", true, true)
@@ -73,34 +74,31 @@ namespace safnet.Identity.Api
                 var configuration = builder.Build();
                 return configuration;
             }
+
+            ILogger CreateLogger()
+            {
+                return new LoggerConfiguration()
+                    .MinimumLevel.Debug()
+                    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+                    .MinimumLevel.Override("System", LogEventLevel.Warning)
+                    .MinimumLevel.Override("Microsoft.AspNetCore.Authentication", LogEventLevel.Information)
+                    .Enrich.FromLogContext()
+                    .WriteTo.File(@"safnet.Identity.Api.log")
+                    .WriteTo.Console(
+                        outputTemplate:
+                        "[{Timestamp:HH:mm:ss} {Level}] {SourceContext}{NewLine}{Message:lj}{NewLine}{Exception}{NewLine}",
+                        theme: AnsiConsoleTheme.Literate)
+                    .CreateLogger();
+            }
+
+            Func<string[], IWebHostBuilder> CreateWebHostBuilder(ILogger logger)
+            {
+                return arguments =>
+                    WebHost.CreateDefaultBuilder(arguments)
+                        .UseStartup<Startup>()
+                        .UseSerilog(logger);
+            }
         }
 
-        public static IWebHostBuilder CreateWebHostBuilder(string[] args)
-        {
-            return WebHost.CreateDefaultBuilder(args)
-                .UseStartup<Startup>()
-                .UseSerilog((context, configuration) => { ConfigureSerilog(configuration); });
-        }
-
-        private static ILogger CreateLogger()
-        {
-            return ConfigureSerilog()
-                .CreateLogger();
-        }
-
-        private static LoggerConfiguration ConfigureSerilog(LoggerConfiguration configuration = null)
-        {
-            return (configuration ?? new LoggerConfiguration())
-                .MinimumLevel.Debug()
-                .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
-                .MinimumLevel.Override("System", LogEventLevel.Warning)
-                .MinimumLevel.Override("Microsoft.AspNetCore.Authentication", LogEventLevel.Information)
-                .Enrich.FromLogContext()
-                .WriteTo.File(@"safnet.Identity.Api.log")
-                .WriteTo.Console(
-                    outputTemplate:
-                    "[{Timestamp:HH:mm:ss} {Level}] {SourceContext}{NewLine}{Message:lj}{NewLine}{Exception}{NewLine}",
-                    theme: AnsiConsoleTheme.Literate);
-        }
     }
 }

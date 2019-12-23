@@ -1,55 +1,44 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using System;
+using AutoMapper;
+using IdentityServer4.EntityFramework.Entities;
+using IdentityServer4.Services;
+using IdentityServer4.Stores;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using safnet.Identity.Database;
-using Microsoft.EntityFrameworkCore;
-using AutoMapper;
+using Microsoft.Extensions.Logging;
 using safnet.Identity.Api.Infrastructure.Persistence;
-using IdentityServer4.Stores;
-using IdentityServer4.Services;
-using Models = IdentityServer4.Models;
-using Entities = IdentityServer4.EntityFramework.Entities;
+using safnet.Identity.Database;
+using Serilog;
 
 namespace safnet.Identity.Api.Infrastructure.MVC
 {
     public class Startup
     {
-
         private IIdentityServerBuilder _identityServerBuilder;
-
-        public IConfiguration Configuration { get; }
 
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
-
         }
+
+        public IConfiguration Configuration { get; }
 
         public void ConfigureServices(IServiceCollection services)
         {
-            ConfigureMvc();
-            services.AddAutoMapper(typeof(AutoMapperProfile).Assembly);
 
             var connectionString = Configuration.GetConnectionString(Constants.IdentityConnectionStringName);
 
             ConfigureIdentityServer(connectionString);
+            ConfigurePersistence(connectionString);
+            ConfigureMvc();
 
-            DbInstaller.Run(connectionString, Configuration);
+            services.AddAutoMapper(typeof(AutoMapperProfile).Assembly);
+            services.AddLogging(builder => builder.AddSerilog(dispose: true));
 
-            services.AddDbContext<IdentityContext>(options =>
-            {
-                options.UseSqlServer(connectionString);
-                options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
-            });
-            
-            services.AddScoped<IRepository<Entities.Client>, IdentityContext>();
-            services.AddScoped<IClientStore, ClientStore>();
-
-
-            services.AddSingleton<ICache<Models.Client>, DefaultCache<Models.Client>>();
 
             void ConfigureMvc()
             {
@@ -72,30 +61,45 @@ namespace safnet.Identity.Api.Infrastructure.MVC
                     })
                     .AddClientStore<ClientStore>()
                     .AddClientStoreCache<CachingClientStore<ClientStore>>();
+
+                services.AddSingleton<ICache<IdentityServer4.Models.Client>, DefaultCache<IdentityServer4.Models.Client>>();
+                services.AddScoped<IClientStore, ClientStore>();
+            }
+
+            void ConfigurePersistence(string conString)
+            {
+                DbInstaller.Run(conString, Configuration);
+
+                services.AddDbContext<IdentityContext>(options =>
+                {
+                    options.UseSqlServer(connectionString);
+                    options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
+                });
+
+                services.AddScoped<IRepository<Client>, IdentityContext>();
             }
         }
 
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
         {
             if (env.IsDevelopment())
             {
                 _identityServerBuilder.AddDeveloperSigningCredential();
-                app.UseDeveloperExceptionPage();
             }
             else
             {
                 throw new InvalidOperationException("Need to setup a certificate for IdentityServer4");
-
-                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-                // app.UseHsts();
             }
 
+            // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+            // app.UseHsts();
+
+            loggerFactory.AddSerilog();
+
             app.UseHttpsRedirection()
-               .UseMvc()
-               .UseIdentityServer()
-               .UseHttpsRedirection();
-
-
+                .UseMiddleware<ExceptionLoggingMiddleware>()
+                .UseMvc()
+                .UseIdentityServer();
         }
     }
 }

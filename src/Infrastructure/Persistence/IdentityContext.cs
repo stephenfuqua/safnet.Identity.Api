@@ -19,6 +19,14 @@ namespace safnet.Identity.Api.Infrastructure.Persistence
     [ExcludeFromCodeCoverage]
     public class IdentityContext : DbContext, IRepository<Client>
     {
+        public static IdentityContext Create(string connectionString)
+        {
+            var optionsBuilder = new DbContextOptionsBuilder<IdentityContext>()
+                .UseSqlServer(connectionString)
+                .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
+            return new IdentityContext(optionsBuilder.Options);
+        }
+
         public IdentityContext(DbContextOptions<IdentityContext> options) : base(options)
         {
         }
@@ -28,8 +36,8 @@ namespace safnet.Identity.Api.Infrastructure.Persistence
         public DbSet<IdentityResource> IdentityResources { get; set; }
         public DbSet<ClientGrantType> ClientGrantTypes { get; set; }
         public DbSet<ClientScope> ClientScopes { get; set; }
-
         public DbSet<ClientSecret> ClientSecrets { get; set; }
+        public DbSet<PersistedGrant> PersistedGrants { get; set; }
 
         async Task<Client> IRepository<Client>.CreateAsync(Client entity)
         {
@@ -74,6 +82,11 @@ namespace safnet.Identity.Api.Infrastructure.Persistence
             builder.Entity<Client>().HasKey(m => m.Id);
             builder.Entity<ApiResource>().HasKey(m => m.Id);
             builder.Entity<IdentityResource>().HasKey(m => m.Id);
+            builder.Entity<ClientGrantType>().HasKey(m => m.Id);
+            builder.Entity<ClientSecret>().HasKey(m => m.Id);
+            builder.Entity<ClientScope>().HasKey(m => m.Id);
+            builder.Entity<PersistedGrant>().HasKey(m => m.Key);
+            
             base.OnModelCreating(builder);
         }
     }
