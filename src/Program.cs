@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Linq;
-using IdentityServer4;
 using IdentityServer4.Models;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
@@ -58,8 +56,6 @@ namespace safnet.Identity.Api
                     AllowedGrantTypes = GrantTypes.ClientCredentials,
                     AllowedScopes =
                     {
-                        IdentityServerConstants.StandardScopes.OpenId,
-                        IdentityServerConstants.StandardScopes.Profile,
                         "admin"
                     },
                     ClientSecrets = {new Secret {Value = initialClientSecret.Sha256()}}

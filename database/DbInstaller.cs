@@ -18,19 +18,20 @@ namespace safnet.Identity.Database
             var initialClientKey = config.GetValue<string>(InitialClientKeyKey);
             var initialClientSecret = config.GetValue<string>(InitialClientSecretKey);
 
-            var upgrader = DeployChanges.To
-                           .SqlDatabase(connectionString)
-                           .WithScriptsEmbeddedInAssembly(Assembly.GetExecutingAssembly())
-                           .WithVariables(
-                                new Dictionary<string, string>() {
-                                    { InitialClientKeyKey, initialClientKey },
-                                    { InitialClientSecretKey, initialClientSecret }
-                               }
-                            )
-                           .LogToConsole()
-                           .Build();
+            var upgradeEngine = DeployChanges.To
+                .SqlDatabase(connectionString)
+                .WithScriptsEmbeddedInAssembly(Assembly.GetExecutingAssembly())
+                .WithVariables(
+                    new Dictionary<string, string>
+                    {
+                        {InitialClientKeyKey, initialClientKey},
+                        {InitialClientSecretKey, initialClientSecret}
+                    }
+                )
+                .LogToConsole()
+                .Build();
 
-            var result = upgrader.PerformUpgrade();
+            var result = upgradeEngine.PerformUpgrade();
 
             if (!result.Successful)
             {
