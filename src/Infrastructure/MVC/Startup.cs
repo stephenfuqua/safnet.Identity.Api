@@ -1,17 +1,19 @@
 ﻿using System;
-using AutoMapper;
 using IdentityServer4.EntityFramework.DbContexts;
-using IdentityServer4.EntityFramework.Entities;
+using IdentityServer4.EntityFramework.Stores;
+using IdentityServer4.Models;
 using IdentityServer4.Services;
 using IdentityServer4.Stores;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using safnet.Common.GenericExtensions;
+using safnet.Identity.Api.Infrastructure.Identity;
 using safnet.Identity.Api.Infrastructure.Persistence;
 using safnet.Identity.Database;
 using Serilog;
@@ -40,18 +42,24 @@ namespace safnet.Identity.Api.Infrastructure.MVC
             ConfigurePersistence(connectionString);
             ConfigureIdentityServer(connectionString);
             ConfigureMvc();
-            ConfigureAutoMapper();
             ConfigureLogging();
 
             void ConfigureMvc()
             {
-                services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
+                services
+                    .AddMvc()
+                    .SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
             }
 
             void ConfigureIdentityServer(string conString)
             {
-                // TODO: configure IssuerUri in IdentityServer options
-                _identityServerBuilder = services.AddIdentityServer()
+                _identityServerBuilder = services
+                    .AddIdentityServer()
+                    //.AddIdentityServer(options =>
+                    //{
+                    //    // TODO: configure IssuerUri in IdentityServer options
+                    //    //options.IssuerUri = "????";
+                    //})
                     .AddConfigurationStore(options =>
                     {
                         options.ConfigureDbContext = builder => builder.UseSqlServer(conString);
@@ -62,11 +70,10 @@ namespace safnet.Identity.Api.Infrastructure.MVC
                         options.EnableTokenCleanup = true;
                         options.TokenCleanupInterval = 30;
                     })
-                    .AddClientStore<ClientRepository>()
-                    .AddClientStoreCache<CachingClientStore<ClientRepository>>();
+                    .AddClientStoreCache<CachingClientStore<ClientStore>>()
+                    .AddInMemoryIdentityResources(IdentityInMemory.GetIdentityResources());
 
-                services.AddSingleton<ICache<IdentityServer4.Models.Client>, DefaultCache<IdentityServer4.Models.Client>>();
-                services.AddTransient<IClientStore, ClientRepository>();
+                services.AddSingleton<ICache<Client>, DefaultCache<Client>>();
             }
 
             void ConfigurePersistence(string conString)
@@ -80,11 +87,6 @@ namespace safnet.Identity.Api.Infrastructure.MVC
                 });
 
                 services.AddTransient<IRepository<Client>, ClientRepository>();
-            }
-
-            void ConfigureAutoMapper()
-            {
-                services.AddAutoMapper(typeof(AutoMapperProfile).Assembly);
             }
 
             void ConfigureLogging()
