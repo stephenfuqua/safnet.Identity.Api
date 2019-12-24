@@ -1,4 +1,5 @@
 ﻿using System;
+using IdentityServer4.Configuration;
 using IdentityServer4.EntityFramework.DbContexts;
 using IdentityServer4.EntityFramework.Stores;
 using IdentityServer4.Models;
@@ -7,17 +8,13 @@ using IdentityServer4.Stores;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using safnet.Common.GenericExtensions;
-using safnet.Identity.Api.Infrastructure.Identity;
 using safnet.Identity.Api.Infrastructure.Persistence;
 using safnet.Identity.Database;
-using System.Linq;
-using IdentityServer4.EntityFramework.Mappers;
 using Serilog;
 
 namespace safnet.Identity.Api.Infrastructure.MVC
@@ -55,13 +52,7 @@ namespace safnet.Identity.Api.Infrastructure.MVC
             void ConfigureIdentityServer(string conString)
             {
                 var identityServerBuilder = services
-                    .AddIdentityServer(options =>
-                    {
-                        // TODO: configure IssuerUri in IdentityServer options
-                        //options.IssuerUri = "????";
-                    })
-                    //.AddInMemoryApiResources(IdentityInMemory.Apis)
-                    //.AddInMemoryClients(IdentityInMemory.Clients)
+                    .AddIdentityServer()
                     .AddDeveloperSigningCredential()
                     .AddConfigurationStore(options =>
                     {
@@ -72,9 +63,8 @@ namespace safnet.Identity.Api.Infrastructure.MVC
                         options.ConfigureDbContext = builder => builder.UseSqlServer(conString);
                         options.EnableTokenCleanup = true;
                         options.TokenCleanupInterval = 30;
-                    });
-                //.AddClientStoreCache<CachingClientStore<ClientStore>>()
-                //.AddInMemoryIdentityResources(IdentityInMemory.IdentityResources);
+                    })
+                    .AddClientStoreCache<CachingClientStore<ClientStore>>();
 
                 if (_env.IsDevelopment())
                 {
@@ -121,45 +111,6 @@ namespace safnet.Identity.Api.Infrastructure.MVC
                 .UseMiddleware<ExceptionLoggingMiddleware>()
                 .UseIdentityServer()
                 .UseMvc();
-
-            //InitializeDatabase(app);
         }
-
-        //private void InitializeDatabase(IApplicationBuilder app)
-        //{
-        //    using (var serviceScope = app.ApplicationServices.GetService<IServiceScopeFactory>().CreateScope())
-        //    {
-        //        serviceScope.ServiceProvider.GetRequiredService<PersistedGrantDbContext>().Database.Migrate();
-
-        //        var context = serviceScope.ServiceProvider.GetRequiredService<ConfigurationDbContext>();
-        //        context.Database.Migrate();
-        //        if (!context.Clients.Any())
-        //        {
-        //            foreach (var client in IdentityInMemory.Clients)
-        //            {
-        //                context.Clients.Add(client.ToEntity());
-        //            }
-        //            context.SaveChanges();
-        //        }
-
-        //        if (!context.IdentityResources.Any())
-        //        {
-        //            foreach (var resource in IdentityInMemory.IdentityResources)
-        //            {
-        //                context.IdentityResources.Add(resource.ToEntity());
-        //            }
-        //            context.SaveChanges();
-        //        }
-
-        //        if (!context.ApiResources.Any())
-        //        {
-        //            foreach (var resource in IdentityInMemory.Apis)
-        //            {
-        //                context.ApiResources.Add(resource.ToEntity());
-        //            }
-        //            context.SaveChanges();
-        //        }
-        //    }
-        //}
     }
 }
