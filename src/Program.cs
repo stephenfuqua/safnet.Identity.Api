@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using IdentityServer4;
 using IdentityServer4.EntityFramework.Entities;
+using IdentityServer4.Models;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -9,7 +12,7 @@ using safnet.Identity.Api.Infrastructure.Persistence;
 using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
-using static IdentityModel.OidcConstants;
+using Client = IdentityServer4.EntityFramework.Entities.Client;
 
 namespace safnet.Identity.Api
 {
@@ -48,17 +51,18 @@ namespace safnet.Identity.Api
                     Log.Information("Creating initial client key and secret");
                     var connectionString = configuration.GetConnectionString(Constants.IdentityConnectionStringName);
 
-                    var clientRepo =  ClientRepository.Create(connectionString) as IRepository<Client>;
+                    var clientRepo = ClientRepository.Create(connectionString) as IRepository<Client>;
 
                     _ = clientRepo.CreateAsync(new Client
                     {
                         ClientId = initialClientKey,
                         ClientName = initialClientKey,
-                        AllowedGrantTypes = new List<ClientGrantType>
-                            {new ClientGrantType {GrantType = GrantTypes.ClientCredentials}},
-                        AllowedScopes = new List<ClientScope> {new ClientScope {Scope = StandardScopes.OpenId}},
+                        AllowedGrantTypes = GrantTypes.ClientCredentials.Select(x => new ClientGrantType { GrantType = x}).ToList(),
+                        AllowedScopes = new List<ClientScope>
+                            {new ClientScope {Scope = IdentityServerConstants.StandardScopes.OpenId}},
                         ClientSecrets = new List<ClientSecret>
                             {new ClientSecret {Value = initialClientSecret.Sha256()}}
+                        // TODO: do i need to set AllowOfflineAccess?
                     }).Result;
                 }
             }
@@ -99,6 +103,5 @@ namespace safnet.Identity.Api
                         .UseSerilog(logger);
             }
         }
-
     }
 }

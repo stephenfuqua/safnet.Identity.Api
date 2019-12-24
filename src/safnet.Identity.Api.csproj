@@ -26,7 +26,6 @@
 
   <ItemGroup>
     <Compile Include="Infrastructure\Persistence\ClientRepository.cs" />
-    <Compile Include="Infrastructure\Persistence\ClientStore.cs" />
     <Compile Include="Infrastructure\Persistence\IRepository.cs" />
   </ItemGroup>
 

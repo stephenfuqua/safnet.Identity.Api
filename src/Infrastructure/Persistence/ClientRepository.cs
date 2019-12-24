@@ -1,43 +1,36 @@
 ﻿using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
-using AngleSharp;
+using AutoMapper;
 using IdentityServer4.EntityFramework.DbContexts;
 using IdentityServer4.EntityFramework.Entities;
 using IdentityServer4.EntityFramework.Options;
+using IdentityServer4.Stores;
 using Microsoft.EntityFrameworkCore;
 using safnet.Common.GenericExtensions;
+using safnet.Identity.Api.Infrastructure.MVC;
 
 namespace safnet.Identity.Api.Infrastructure.Persistence
 {
-    public interface IGetByClientId<T>
+    public class ClientRepository : IClientStore, IRepository<Client>
     {
-        Task<T> GetAsync(string clientId);
-    }
-
-    [ExcludeFromCodeCoverage]
-    public class ClientRepository : IRepository<Client>, IGetByClientId<Client>
-    {
-        public static ClientRepository Create(string connectionString)
-        {
-            var optionsBuilder = new DbContextOptionsBuilder<ConfigurationDbContext>()
-                .UseSqlServer(connectionString)
-                .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
-
-            var dbContext = new ConfigurationDbContext(optionsBuilder.Options, new ConfigurationStoreOptions());
-            return new ClientRepository(dbContext);
-        }
-
-        //public IdentityContext(DbContextOptions<IdentityContext> options) : base(options)
-        //{
-        //}
-
         private readonly ConfigurationDbContext _dbContext;
-        public ClientRepository(ConfigurationDbContext dbContext)
+        private readonly IMapper _mapper;
+
+        public ClientRepository(ConfigurationDbContext dbContext, IMapper mapper)
         {
             _dbContext = dbContext.MustNotBeNull(nameof(dbContext));
+            _mapper = mapper.MustNotBeNull(nameof(mapper));
         }
-   
+
+        public async Task<IdentityServer4.Models.Client> FindClientByIdAsync(string clientId)
+        {
+            var c = await _dbContext.Clients
+                .Include(x => x.ClientSecrets)
+                .Include(x => x.AllowedGrantTypes)
+                .FirstOrDefaultAsync(x => x.ClientId == clientId);
+
+            return _mapper.Map<IdentityServer4.Models.Client>(c);
+        }
 
         public async Task<Client> CreateAsync(Client entity)
         {
@@ -49,7 +42,7 @@ namespace safnet.Identity.Api.Infrastructure.Persistence
 
         public async Task DeleteAsync(int id)
         {
-            _dbContext.Clients.Remove(new Client {Id = id});
+            _dbContext.Clients.Remove(new Client { Id = id });
             await _dbContext.SaveChangesAsync();
         }
 
@@ -68,7 +61,7 @@ namespace safnet.Identity.Api.Infrastructure.Persistence
         {
             return await _dbContext.Clients.FirstOrDefaultAsync(x => x.Id == id);
         }
-        
+
         public async Task<Client> UpdateAsync(Client entity)
         {
             _dbContext.Clients.Update(entity);
@@ -76,9 +69,18 @@ namespace safnet.Identity.Api.Infrastructure.Persistence
 
             return entity;
         }
-        async Task<Client> IGetByClientId<Client>.GetAsync(string clientId)
+
+        public static ClientRepository Create(string connectionString)
         {
-            return await _dbContext.Clients.FirstOrDefaultAsync(x => x.ClientId == clientId);
+            var optionsBuilder = new DbContextOptionsBuilder<ConfigurationDbContext>()
+                .UseSqlServer(connectionString)
+                .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
+
+            var dbContext = new ConfigurationDbContext(optionsBuilder.Options, new ConfigurationStoreOptions());
+            var mapper = new MapperConfiguration(x => x.AddProfile(typeof(AutoMapperProfile)))
+                .CreateMapper();
+
+            return new ClientRepository(dbContext, mapper);
         }
     }
 }

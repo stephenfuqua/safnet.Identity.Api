@@ -60,11 +60,11 @@ namespace safnet.Identity.Api.Infrastructure.MVC
                         options.EnableTokenCleanup = true;
                         options.TokenCleanupInterval = 30;
                     })
-                    //.AddClientStore<ClientStore>()
-                    .AddClientStoreCache<CachingClientStore<ClientStore>>();
+                    .AddClientStore<ClientRepository>()
+                    .AddClientStoreCache<CachingClientStore<ClientRepository>>();
 
                 services.AddSingleton<ICache<IdentityServer4.Models.Client>, DefaultCache<IdentityServer4.Models.Client>>();
-                services.AddTransient<IClientStore, ClientStore>();
+                services.AddTransient<IClientStore, ClientRepository>();
             }
 
             void ConfigurePersistence(string conString)
@@ -78,7 +78,6 @@ namespace safnet.Identity.Api.Infrastructure.MVC
                 });
 
                 services.AddTransient<IRepository<Client>, ClientRepository>();
-                services.AddTransient<IGetByClientId<Client>, ClientRepository>();
             }
         }
 

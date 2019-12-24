@@ -5,7 +5,7 @@ namespace safnet.Identity.Api
     // TODO: consider moving to safnet.Common
     public static class StringExtensions
     {
-        public static string Sha256(this string randomString)
+        public static string aSha256(this string randomString)
         {
             var crypt = new System.Security.Cryptography.SHA256Managed();
             var hash = new System.Text.StringBuilder();

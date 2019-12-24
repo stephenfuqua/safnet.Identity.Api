@@ -10,6 +10,7 @@ namespace safnet.Identity.Api.Infrastructure.MVC
         {
             CreateMap<Models.Client, Entities.Client>();
             CreateMap<Entities.Client, Models.Client>();
+            CreateMap<Entities.ClientSecret, Models.Secret>();
         }
     }
 }
