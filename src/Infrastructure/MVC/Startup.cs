@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using safnet.Common.GenericExtensions;
 using safnet.Identity.Api.Infrastructure.Persistence;
 using safnet.Identity.Database;
 using Serilog;
@@ -23,6 +24,8 @@ namespace safnet.Identity.Api.Infrastructure.MVC
 
         public Startup(IConfiguration configuration)
         {
+            configuration.MustNotBeNull(nameof(configuration));
+
             Configuration = configuration;
         }
 
@@ -30,16 +33,15 @@ namespace safnet.Identity.Api.Infrastructure.MVC
 
         public void ConfigureServices(IServiceCollection services)
         {
+            services.MustNotBeNull(nameof(services));
 
             var connectionString = Configuration.GetConnectionString(Constants.IdentityConnectionStringName);
 
             ConfigurePersistence(connectionString);
             ConfigureIdentityServer(connectionString);
             ConfigureMvc();
-
-            services.AddAutoMapper(typeof(AutoMapperProfile).Assembly);
-            services.AddLogging(builder => builder.AddSerilog(dispose: true));
-
+            ConfigureAutoMapper();
+            ConfigureLogging();
 
             void ConfigureMvc()
             {
@@ -79,10 +81,24 @@ namespace safnet.Identity.Api.Infrastructure.MVC
 
                 services.AddTransient<IRepository<Client>, ClientRepository>();
             }
+
+            void ConfigureAutoMapper()
+            {
+                services.AddAutoMapper(typeof(AutoMapperProfile).Assembly);
+            }
+
+            void ConfigureLogging()
+            {
+                services.AddLogging(builder => builder.AddSerilog(dispose: true));
+            }
         }
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
         {
+            app.MustNotBeNull(nameof(app));
+            env.MustNotBeNull(nameof(env));
+            loggerFactory.MustNotBeNull(nameof(loggerFactory));
+
             if (env.IsDevelopment())
             {
                 _identityServerBuilder.AddDeveloperSigningCredential();
