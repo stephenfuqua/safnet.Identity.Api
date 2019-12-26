@@ -12,7 +12,13 @@ using safnet.Common.GenericExtensions;
 
 namespace safnet.Identity.Api.Infrastructure.Persistence
 {
-    public class ClientRepository : IRepository<Client>
+    public interface IClientRepository : IRepository<Client>
+    {
+        // TODO: add needed methods here, since Client model does not have an integer identifier
+    }
+
+
+    public class ClientRepository : IClientRepository
     {
         private readonly IConfigurationDbContext _dbContext;
 
@@ -23,6 +29,8 @@ namespace safnet.Identity.Api.Infrastructure.Persistence
 
         public async Task<Client> CreateAsync(Client model)
         {
+            model.MustNotBeNull(nameof(model));
+
             _dbContext.Clients.Add(model.ToEntity());
             await _dbContext.SaveChangesAsync();
 
@@ -31,15 +39,15 @@ namespace safnet.Identity.Api.Infrastructure.Persistence
             return model;
         }
 
-        public async Task DeleteAsync(int id)
+        public Task DeleteAsync(int id)
         {
             throw new NotImplementedException("Deleting client by integer id is not supported");
-            //_dbContext.Clients.Remove(new Client { Id = id });
-            //await _dbContext.SaveChangesAsync();
         }
 
         public async Task DeleteAsync(Client model)
         {
+            model.MustNotBeNull(nameof(model));
+
             _dbContext.Clients.Remove(model.ToEntity());
 
             await _dbContext.SaveChangesAsync();
@@ -52,14 +60,15 @@ namespace safnet.Identity.Api.Infrastructure.Persistence
                 .ToListAsync();
         }
 
-        public async Task<Client> GetAsync(int id)
+        public Task<Client> GetAsync(int id)
         {
             throw new NotImplementedException("Querying for client by integer id is not supported");
-            //return await _dbContext.Clients.FirstOrDefaultAsync(x => x.Id == id);
         }
 
         public async Task<Client> UpdateAsync(Client model)
         {
+            model.MustNotBeNull(nameof(model));
+
             _dbContext.Clients.Update(model.ToEntity());
             await _dbContext.SaveChangesAsync();
 
