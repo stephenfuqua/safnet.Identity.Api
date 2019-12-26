@@ -91,6 +91,7 @@ namespace safnet.Identity.Api.Infrastructure.MVC
                 });
 
                 services.AddTransient<IRepository<Client>, ClientRepository>();
+                services.AddTransient<IClientRepository, ClientRepository>();
             }
 
             void ConfigureLogging()
@@ -124,7 +125,10 @@ namespace safnet.Identity.Api.Infrastructure.MVC
             app.UseHttpsRedirection()
                 .UseMiddleware<ExceptionLoggingMiddleware>()
                 .UseIdentityServer()
-                .UseMvc();
+                .UseMvc(routes => { 
+                    //routes.MapRoute("DefaultWebPage", "{controller=Home}/{action=Index}/{id?}");
+                    //routes.MapWebApiRoute("DefaultApi", "api/{controller}/{id?}");
+                });
         }
     }
 }

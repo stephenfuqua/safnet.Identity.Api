@@ -27,6 +27,8 @@
   <ItemGroup>
     <Compile Include="Infrastructure\Persistence\ClientRepository.cs" />
     <Compile Include="Infrastructure\Persistence\IRepository.cs" />
+    <Compile Include="Services\Controllers\ClientsController.cs" />
+    <Compile Include="Services\Controllers\PingController.cs" />
   </ItemGroup>
 
   <ItemGroup>

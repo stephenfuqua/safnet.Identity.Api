@@ -9,14 +9,13 @@ using IdentityServer4.EntityFramework.Mappers;
 using IdentityServer4.Models;
 using IdentityServer4.EntityFramework.Options;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Internal;
 using safnet.Common.GenericExtensions;
 
 namespace safnet.Identity.Api.Infrastructure.Persistence
 {
     public interface IClientRepository : IRepository<Client>
     {
-        // TODO: add needed methods here, since Client model does not have an integer identifier
+        Task<Client> GetByClientIdAsync(string clientId);
     }
 
 
@@ -78,13 +77,12 @@ namespace safnet.Identity.Api.Infrastructure.Persistence
 
             return model;
         }
+
         public async Task<Client> GetByClientIdAsync(string clientId)
         {
-            return await _dbContext.Clients
-                .Select(x => x.ToModel())
-                // TODO: see if this is going to retrieve all clients before filtering. If so,
-                // may have to stop using async in this case. Or will ContinueWith solve it?
-                .FirstOrDefaultAsync(x => x.ClientId == clientId);
+            return (await _dbContext.Clients
+                    .FirstOrDefaultAsync(x => x.ClientId == clientId)
+                )?.ToModel();
         }
 
         [ExcludeFromCodeCoverage]

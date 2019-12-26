@@ -1,17 +1,19 @@
 ﻿using System;
-using System.Web.Http;
+using System.Globalization;
+using Microsoft.AspNetCore.Mvc;
 
-namespace FlightNode.Identity.Services.Controllers
+namespace safnet.Identity.Api.Services.Controllers
 {
     /// <summary>
     /// Returns the current date time, thus confirming that the API service is running
     /// </summary>
-    public class PingController : ApiController
+    [Route("api/[controller]")]
+    public class PingController : ControllerBase
     {
         [HttpGet]
-        public IHttpActionResult Get()
+        public IActionResult Get()
         {
-            return Ok(DateTime.Now.ToString());
+            return Ok(DateTime.Now.ToString(CultureInfo.InvariantCulture));
         }
     }
 }
