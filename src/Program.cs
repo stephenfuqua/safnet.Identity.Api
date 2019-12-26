@@ -77,6 +77,7 @@ namespace safnet.Identity.Api
             ILogger CreateLogger()
             {
                 return new LoggerConfiguration()
+                    // TODO: control some of this via appSettings
                     .MinimumLevel.Debug()
                     .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
                     .MinimumLevel.Override("System", LogEventLevel.Warning)

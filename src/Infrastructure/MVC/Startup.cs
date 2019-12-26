@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IdentityModel.Tokens.Jwt;
 using IdentityServer4.Configuration;
 using IdentityServer4.EntityFramework.DbContexts;
 using IdentityServer4.EntityFramework.Stores;
@@ -41,6 +42,7 @@ namespace safnet.Identity.Api.Infrastructure.MVC
             ConfigureIdentityServer(connectionString);
             ConfigureMvc();
             ConfigureLogging();
+            ConfigureBearerAuth();
 
             void ConfigureMvc()
             {
@@ -94,6 +96,18 @@ namespace safnet.Identity.Api.Infrastructure.MVC
             void ConfigureLogging()
             {
                 services.AddLogging(builder => builder.AddSerilog(dispose: true));
+            }
+
+            void ConfigureBearerAuth()
+            {
+                var jwtAuthorityUrl = Configuration.GetValue<string>("JwtAuthorityUrl");
+                services.AddAuthentication("Bearer")
+                    .AddJwtBearer("Bearer", options =>
+                    {
+                        options.Authority = jwtAuthorityUrl; //"https://localhost:44373";
+                        options.RequireHttpsMetadata = false;
+                        options.Audience = "admin";
+                    });
             }
         }
 
