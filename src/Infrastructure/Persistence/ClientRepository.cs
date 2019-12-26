@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading.Tasks;
 using IdentityServer4.EntityFramework.DbContexts;
@@ -8,6 +9,7 @@ using IdentityServer4.EntityFramework.Mappers;
 using IdentityServer4.Models;
 using IdentityServer4.EntityFramework.Options;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Internal;
 using safnet.Common.GenericExtensions;
 
 namespace safnet.Identity.Api.Infrastructure.Persistence
@@ -76,7 +78,16 @@ namespace safnet.Identity.Api.Infrastructure.Persistence
 
             return model;
         }
+        public async Task<Client> GetByClientIdAsync(string clientId)
+        {
+            return await _dbContext.Clients
+                .Select(x => x.ToModel())
+                // TODO: see if this is going to retrieve all clients before filtering. If so,
+                // may have to stop using async in this case. Or will ContinueWith solve it?
+                .FirstOrDefaultAsync(x => x.ClientId == clientId);
+        }
 
+        [ExcludeFromCodeCoverage]
         public static ClientRepository Create(string connectionString)
         {
             var optionsBuilder = new DbContextOptionsBuilder<ConfigurationDbContext>()
