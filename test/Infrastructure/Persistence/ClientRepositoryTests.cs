@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using FakeItEasy;
 using IdentityServer4.EntityFramework.Entities;
 using IdentityServer4.EntityFramework.Interfaces;
-using Microsoft.EntityFrameworkCore;
 using NUnit.Framework;
 using safnet.Identity.Api.Infrastructure.Persistence;
 using safnet.TestHelper.AsyncDbSet;
@@ -19,6 +18,8 @@ namespace safnet.Identity.Api.UnitTests.Infrastructure.Persistence
     [TestFixture]
     public class ClientRepositoryTests
     {
+        protected const string ClientId = "hello";
+
         [SetUp]
         protected virtual void SetUp()
         {
@@ -38,11 +39,11 @@ namespace safnet.Identity.Api.UnitTests.Infrastructure.Persistence
             {
                 base.SetUp();
 
-                MockDbSet = A.Fake<DbSet<Client>>();
+                MockDbSet = new FakeAsyncDbSet<Client>();
                 A.CallTo(() => ConfigurationDbContext.Clients).Returns(MockDbSet);
             }
 
-            protected DbSet<Client> MockDbSet;
+            protected FakeAsyncDbSet<Client> MockDbSet;
 
             [TestFixture]
             public class When_creating_new_Client : Modification
@@ -53,7 +54,7 @@ namespace safnet.Identity.Api.UnitTests.Infrastructure.Persistence
                     [Test]
                     public void Then_throw_ArgumentNullException()
                     {
-                        Func<Task<IdentityServer4.Models.Client>> act = () => System.CreateAsync(null);
+                        Func<Task<int>> act = () => System.CreateAsync(null);
                         act.ShouldThrow<ArgumentNullException>();
                     }
                 }
@@ -65,16 +66,21 @@ namespace safnet.Identity.Api.UnitTests.Infrastructure.Persistence
                     {
                         base.SetUp();
 
+                        // Arrange
+                        A.CallTo(() => ConfigurationDbContext.SaveChangesAsync())
+                            .Returns(Task.FromResult(1));
+
+                        // Act
                         Result = System.CreateAsync(Model).Result;
                     }
 
                     protected IdentityServer4.Models.Client Model = new IdentityServer4.Models.Client
                     {
-                        ClientId = "hello",
-                        ClientSecrets = new List<Secret> {new Secret {Value = "world"}}
+                        ClientId = ClientId,
+                        ClientSecrets = new List<Secret> { new Secret { Value = "world" } }
                     };
 
-                    protected IdentityServer4.Models.Client Result;
+                    protected int Result;
 
                     [Test]
                     public void Then_database_changes_should_be_finalized()
@@ -86,34 +92,36 @@ namespace safnet.Identity.Api.UnitTests.Infrastructure.Persistence
                     [Test]
                     public void Then_model_should_be_loaded_into_the_database()
                     {
-                        A.CallTo(() => MockDbSet.Add(A<Client>.That.Matches(x => x.ClientId == Model.ClientId)))
-                            .MustHaveHappened();
+                        MockDbSet.Added.ShouldSatisfyAllConditions(
+                            () => MockDbSet.Added.Count.ShouldBe(1),
+                            () => MockDbSet.Added.ShouldContain(x => x.ClientId == ClientId)
+                        );
                     }
 
                     [Test]
-                    public void Then_return_original_object()
+                    public void Then_record_count_is_one()
                     {
-                        Result.ShouldBeSameAs(Model);
+                        Result.ShouldBe(1);
                     }
                 }
             }
 
             [TestFixture]
-            public class When_updating_an_existing_Client : Modification
+            public class When_updating_a_Client : Modification
             {
                 [TestFixture]
-                public class Given_null_model : When_updating_an_existing_Client
+                public class Given_null_model : When_updating_a_Client
                 {
                     [Test]
                     public void Then_throw_ArgumentNullException()
                     {
-                        Func<Task<IdentityServer4.Models.Client>> act = () => System.UpdateAsync(null);
+                        Func<Task<int>> act = () => System.UpdateAsync(null);
                         act.ShouldThrow<ArgumentNullException>();
                     }
                 }
 
                 [TestFixture]
-                public class Given_populated_model : When_updating_an_existing_Client
+                public class Given_clientId_does_not_exist : When_updating_a_Client
                 {
                     protected override void SetUp()
                     {
@@ -124,11 +132,57 @@ namespace safnet.Identity.Api.UnitTests.Infrastructure.Persistence
 
                     protected IdentityServer4.Models.Client Model = new IdentityServer4.Models.Client
                     {
-                        ClientId = "hello",
-                        ClientSecrets = new List<Secret> {new Secret {Value = "world"}}
+                        ClientId = ClientId,
+                        ClientSecrets = new List<Secret> { new Secret { Value = "world" } }
                     };
 
-                    protected IdentityServer4.Models.Client Result;
+                    protected int Result;
+
+                    [Test]
+                    public void Then_result_count_should_be_zero()
+                    {
+                        Result.ShouldBe(0);
+                    }
+                }
+
+                [TestFixture]
+                public class Given_populated_model : When_updating_a_Client
+                {
+                    protected override void SetUp()
+                    {
+                        base.SetUp();
+
+                        // Arrange
+                        A.CallTo(() => ConfigurationDbContext.SaveChangesAsync())
+                            .Returns(Task.FromResult(1));
+
+                        MockDbSet.List.Add(_entity);
+
+                        // Act
+                        Result = System.UpdateAsync(_model).Result;
+                    }
+
+
+                    private const string _clientName = "world";
+
+                    private readonly Client _entity = new Client
+                    {
+                        ClientId = ClientId
+                    };
+
+                    private readonly IdentityServer4.Models.Client _model = new IdentityServer4.Models.Client
+                    {
+                        ClientId = ClientId,
+                        ClientName = _clientName
+                    };
+
+                    protected int Result;
+
+                    [Test]
+                    public void Then_clientName_should_be_changed()
+                    {
+                        _entity.ClientName.ShouldBe(_clientName);
+                    }
 
                     [Test]
                     public void Then_database_changes_should_be_finalized()
@@ -138,16 +192,19 @@ namespace safnet.Identity.Api.UnitTests.Infrastructure.Persistence
                     }
 
                     [Test]
-                    public void Then_model_should_be_loaded_into_the_database()
+                    public void Then_entity_should_be_set_for_update()
                     {
-                        A.CallTo(() => MockDbSet.Update(A<Client>.That.Matches(x => x.ClientId == Model.ClientId)))
-                            .MustHaveHappened();
+                        MockDbSet.Updated.ShouldSatisfyAllConditions(
+                            () => MockDbSet.Updated.Count.ShouldBe(1),
+                            () => MockDbSet.Updated[0].ClientId.ShouldBe(ClientId),
+                            () => MockDbSet.Updated[0].ClientName.ShouldBe(_clientName)
+                        );
                     }
 
                     [Test]
-                    public void Then_return_original_object()
+                    public void Then_record_count_is_one()
                     {
-                        Result.ShouldBeSameAs(Model);
+                        Result.ShouldBe(1);
                     }
                 }
             }
@@ -166,33 +223,48 @@ namespace safnet.Identity.Api.UnitTests.Infrastructure.Persistence
             public class When_deleting_by_model : Modification
             {
                 [TestFixture]
-                public class Given_null_model : When_updating_an_existing_Client
+                public class Given_null_model : When_deleting_by_model
                 {
                     [Test]
                     public void Then_throw_ArgumentNullException()
                     {
-                        Func<Task> act = () => System.DeleteAsync(null);
+                        Func<Task<int>> act = () => System.DeleteAsync(null);
                         act.ShouldThrow<ArgumentNullException>();
                     }
                 }
 
                 [TestFixture]
-                public class Given_populated_model : When_updating_an_existing_Client
+                public class Given_client_exists : When_deleting_by_model
                 {
+                    private const int _id = 1234;
+
                     protected override void SetUp()
                     {
                         base.SetUp();
 
-                        System.DeleteAsync(Model).Wait();
+                        // Arrange
+                        A.CallTo(() => ConfigurationDbContext.SaveChangesAsync())
+                            .Returns(Task.FromResult(1));
+
+                        MockDbSet.List.Add(_entity);
+
+                        // Act
+                        Result = System.DeleteAsync(_model).Result;
                     }
 
-                    protected IdentityServer4.Models.Client Model = new IdentityServer4.Models.Client
+                    private readonly IdentityServer4.Models.Client _model = new IdentityServer4.Models.Client
                     {
-                        ClientId = "hello",
-                        ClientSecrets = new List<Secret> {new Secret {Value = "world"}}
+                        ClientId = ClientId,
+                        ClientSecrets = new List<Secret> { new Secret { Value = "world" } }
                     };
 
-                    protected IdentityServer4.Models.Client Result;
+                    private readonly Client _entity = new Client
+                    {
+                        ClientId = ClientId,
+                        Id = _id
+                    };
+
+                    protected int Result;
 
                     [Test]
                     public void Then_database_changes_should_be_finalized()
@@ -204,8 +276,47 @@ namespace safnet.Identity.Api.UnitTests.Infrastructure.Persistence
                     [Test]
                     public void Then_model_should_be_removed_from_the_database()
                     {
-                        A.CallTo(() => MockDbSet.Remove(A<Client>.That.Matches(x => x.ClientId == Model.ClientId)))
-                            .MustHaveHappened();
+                        MockDbSet.Deleted.ShouldSatisfyAllConditions(
+                            () => MockDbSet.Deleted.Count.ShouldBe(1),
+                            () => MockDbSet.Deleted.ShouldContain(x => x.Id == _id)
+                        );
+                    }
+
+                    [Test]
+                    public void Then_record_count_is_one()
+                    {
+                        Result.ShouldBe(1);
+                    }
+                }
+
+                [TestFixture]
+                public class Given_client_does_not_exist : When_deleting_by_model
+                {
+                    // Behavior is not modified for this case. Tests created just for regression
+                    // and to "document" that the result is simply passed back up the call stack.
+
+                    protected override void SetUp()
+                    {
+                        base.SetUp();
+                        
+                        // Arrange
+                        // note: not adding the entity to the fake DBSet object
+
+                        // Act
+                        Result = System.DeleteAsync(Model).Result;
+                    }
+
+                    protected IdentityServer4.Models.Client Model = new IdentityServer4.Models.Client
+                    {
+                        ClientId = ClientId
+                    };
+
+                    protected int Result;
+
+                    [Test]
+                    public void Then_record_count_is_zero()
+                    {
+                        Result.ShouldBe(0);
                     }
                 }
             }
@@ -237,7 +348,8 @@ namespace safnet.Identity.Api.UnitTests.Infrastructure.Persistence
                         base.SetUp();
 
                         // Inject the two objects into the fake database
-                        FakeDbSet.AddRange(Entity1, Entity2);
+                        FakeDbSet.List.Add(Entity1);
+                        FakeDbSet.List.Add(Entity2);
 
                         // Call the system under test
                         Result = System.GetAllAsync().Result;
@@ -307,7 +419,8 @@ namespace safnet.Identity.Api.UnitTests.Infrastructure.Persistence
                         base.SetUp();
 
                         // Inject the two objects into the fake database
-                        FakeDbSet.AddRange(Entity1, Entity2);
+                        FakeDbSet.List.Add(Entity1);
+                        FakeDbSet.List.Add(Entity2);
 
                         // Call the system under test
                         Result = System.GetByClientIdAsync(Entity1.ClientId).Result;
@@ -315,7 +428,7 @@ namespace safnet.Identity.Api.UnitTests.Infrastructure.Persistence
 
                     protected Client Entity2 = new Client
                     {
-                        ClientId = "hello"
+                        ClientId = ClientId
                     };
 
                     protected Client Entity1 = new Client

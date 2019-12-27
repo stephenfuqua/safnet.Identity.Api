@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 using IdentityServer4.EntityFramework.DbContexts;
 using IdentityServer4.EntityFramework.Interfaces;
 using IdentityServer4.EntityFramework.Mappers;
-using IdentityServer4.Models;
 using IdentityServer4.EntityFramework.Options;
+using IdentityServer4.Models;
 using Microsoft.EntityFrameworkCore;
 using safnet.Common.GenericExtensions;
 
@@ -28,30 +28,31 @@ namespace safnet.Identity.Api.Infrastructure.Persistence
             _dbContext = dbContext.MustNotBeNull(nameof(dbContext));
         }
 
-        public async Task<Client> CreateAsync(Client model)
+        public async Task<int> CreateAsync(Client model)
         {
             model.MustNotBeNull(nameof(model));
 
             _dbContext.Clients.Add(model.ToEntity());
-            await _dbContext.SaveChangesAsync();
-
-            // No changes to map back to the model in this case
-
-            return model;
+            return await _dbContext.SaveChangesAsync();
         }
 
-        public Task DeleteAsync(int id)
+        public Task<int> DeleteAsync(int id)
         {
             throw new NotImplementedException("Deleting client by integer id is not supported");
         }
 
-        public async Task DeleteAsync(Client model)
+        public async Task<int> DeleteAsync(Client model)
         {
             model.MustNotBeNull(nameof(model));
 
-            _dbContext.Clients.Remove(model.ToEntity());
+            var original = await GetByClientId(model.ClientId);
+            if (original == null)
+            {
+                return 0;
+            }
+            _dbContext.Clients.Remove(original);
 
-            await _dbContext.SaveChangesAsync();
+            return await _dbContext.SaveChangesAsync();
         }
 
         public async Task<IReadOnlyList<Client>> GetAllAsync()
@@ -66,23 +67,27 @@ namespace safnet.Identity.Api.Infrastructure.Persistence
             throw new NotImplementedException("Querying for client by integer id is not supported");
         }
 
-        public async Task<Client> UpdateAsync(Client model)
+        public async Task<int> UpdateAsync(Client model)
         {
             model.MustNotBeNull(nameof(model));
 
-            _dbContext.Clients.Update(model.ToEntity());
-            await _dbContext.SaveChangesAsync();
+            var original = await GetByClientId(model.ClientId);
+            if (original == null)
+            {
+                return 0;
+            }
 
-            // No changes to map back to the model in this case
+            // TODO: map other values
+            original.ClientName = model.ClientName;
 
-            return model;
+            _dbContext.Clients.Update(original);
+
+            return await _dbContext.SaveChangesAsync();
         }
 
         public async Task<Client> GetByClientIdAsync(string clientId)
         {
-            return (await _dbContext.Clients
-                    .FirstOrDefaultAsync(x => x.ClientId == clientId)
-                )?.ToModel();
+            return (await GetByClientId(clientId))?.ToModel();
         }
 
         [ExcludeFromCodeCoverage]
@@ -94,6 +99,12 @@ namespace safnet.Identity.Api.Infrastructure.Persistence
 
             var dbContext = new ConfigurationDbContext(optionsBuilder.Options, new ConfigurationStoreOptions());
             return new ClientRepository(dbContext);
+        }
+
+        private async Task<IdentityServer4.EntityFramework.Entities.Client> GetByClientId(string clientId)
+        {
+            return await _dbContext.Clients
+                .FirstOrDefaultAsync(x => x.ClientId == clientId);
         }
     }
 }

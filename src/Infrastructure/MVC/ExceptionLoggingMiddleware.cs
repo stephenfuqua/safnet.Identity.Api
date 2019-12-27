@@ -28,7 +28,7 @@ namespace safnet.Identity.Api.Infrastructure.MVC
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Exception on {Url}", context.Request.GetDisplayUrl());
+                _logger.LogError(e, "{Verb} {Url}", context.Request.Method, context.Request.GetDisplayUrl());
                 context.Response.StatusCode = StatusCodes.Status500InternalServerError;
             }
         }

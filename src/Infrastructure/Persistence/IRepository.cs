@@ -7,9 +7,9 @@ namespace safnet.Identity.Api.Infrastructure.Persistence
     {
         Task<IReadOnlyList<T>> GetAllAsync();
         Task<T> GetAsync(int id);
-        Task<T> CreateAsync(T model);
-        Task<T> UpdateAsync(T entity);
-        Task DeleteAsync(int id);
-        Task DeleteAsync(T entity);
+        Task<int> CreateAsync(T model);
+        Task<int> UpdateAsync(T entity);
+        Task<int> DeleteAsync(int id);
+        Task<int> DeleteAsync(T entity);
     }
 }
