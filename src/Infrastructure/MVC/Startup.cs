@@ -1,6 +1,5 @@
 ﻿using System;
-using System.IdentityModel.Tokens.Jwt;
-using IdentityServer4.Configuration;
+using System.Diagnostics.CodeAnalysis;
 using IdentityServer4.EntityFramework.DbContexts;
 using IdentityServer4.EntityFramework.Stores;
 using IdentityServer4.Models;
@@ -8,7 +7,9 @@ using IdentityServer4.Services;
 using IdentityServer4.Stores;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SpaServices.ReactDevelopmentServer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,6 +21,7 @@ using Serilog;
 
 namespace safnet.Identity.Api.Infrastructure.MVC
 {
+    [ExcludeFromCodeCoverage]
     public class Startup
     {
         private readonly IHostingEnvironment _env;
@@ -43,12 +45,21 @@ namespace safnet.Identity.Api.Infrastructure.MVC
             ConfigureMvc();
             ConfigureLogging();
             ConfigureBearerAuth();
+            ConfigureReact();
 
             void ConfigureMvc()
             {
-                services
+                services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>()
                     .AddMvc()
                     .SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
+            }
+
+            void ConfigureReact()
+            {
+                services.AddSpaStaticFiles(configuration =>
+                {
+                    configuration.RootPath = "ClientApp/build";
+                });
             }
 
             void ConfigureIdentityServer(string conString)
@@ -117,18 +128,36 @@ namespace safnet.Identity.Api.Infrastructure.MVC
             app.MustNotBeNull(nameof(app));
             loggerFactory.MustNotBeNull(nameof(loggerFactory));
 
-            // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-            // app.UseHsts();
+            if (_env.IsDevelopment())
+            {
+                app.UseDeveloperExceptionPage();
+            }
+            else
+            {
+                app.UseExceptionHandler("/Error");
+                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+                app.UseHsts();
+            }
 
             loggerFactory.AddSerilog();
 
             app.UseHttpsRedirection()
                 .UseMiddleware<ExceptionLoggingMiddleware>()
                 .UseIdentityServer()
-                .UseMvc(routes => { 
-                    //routes.MapRoute("DefaultWebPage", "{controller=Home}/{action=Index}/{id?}");
-                    //routes.MapWebApiRoute("DefaultApi", "api/{controller}/{id?}");
-                });
+                .UseMvc(routes =>
+                {
+                    routes.MapRoute(
+                        name: "default",
+                        template: "{controller}/{action=Index}/{id?}");
+                }).UseSpa(spa =>
+                {
+                    spa.Options.SourcePath = "ClientApp";
+
+                    if (_env.IsDevelopment())
+                    {
+                        spa.UseReactDevelopmentServer(npmScript: "start");
+                    }
+                }); ;
         }
     }
 }
