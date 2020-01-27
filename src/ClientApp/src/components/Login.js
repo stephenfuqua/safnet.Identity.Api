@@ -1,50 +1,69 @@
 import React from 'react';
+import { Formik, Field, ErrorMessage } from 'formik';
 import Container from 'react-bootstrap/Container';
 import Form from 'react-bootstrap/Form';
+import FormGroup from 'react-bootstrap/FormGroup'
+import FormLabel from 'react-bootstrap/FormLabel'
+import FormControl from 'react-bootstrap/FormControl'
+import FormCheck from 'react-bootstrap/FormCheck'
 import Button from 'react-bootstrap/Button';
 
 class Login extends React.Component {
-    constructor(props) {
-        super(props);
-        this.state = {
-            emailAddress: '',
-            password: '',
-            rememberMe: false
-        };
-    }
-
-    signIn = event => {
-        event.preventDefault();
-        alert('hello ' + this.state.emailAddress);
-    }
-
-    formChangeHandler = event => {
-        let nam = event.target.name;
-        let val = event.target.value;
-        this.setState({ [nam]: val });
-    }
-
     render() {
-        return <Container>
-            <h1>Sign-in</h1>
-
-            <Form>
-                <Form.Group controlId="email-address">
-                    <Form.Label>E-mail Address</Form.Label>
-                    <Form.Control type="email" placeholder="E-mail address / username" name="emailAddress" onChange={this.formChangeHandler} required />
-                </Form.Group>
-                <Form.Group controlId="password">
-                    <Form.Label>Password</Form.Label>
-                    <Form.Control type="password" placeholder="Password" name="password" onChange={this.formChangeHandler} required />
-                </Form.Group>
-                <Form.Group controlId="remember-me">
-                    <Form.Check type="checkbox" label="Remember My Login" name="rememberMe" onChange={this.formChangeHandler} />
-                </Form.Group>
-                <Form.Group>
-                    <Button variant="primary" type="submit" onSubmit={this.signIn} onClick={this.signIn}>Login</Button>
-                </Form.Group>
-            </Form>
-        </Container>
+        return (
+            <Container>
+                <h1>Sign-in</h1>
+                <Formik
+                    initialValues={{ emailAddress: '', password: '', rememberMe: false }}
+                    onSubmit={values => {
+                        alert(JSON.stringify(values, null, 2));
+                    }}
+                >
+                    {({
+                        values,
+                        errors,
+                        touched,
+                        handleChange,
+                        handleBlur,
+                        handleSubmit,
+                        isSubmitting
+                    }) => (
+                            <Form onSubmit={handleSubmit}>
+                                <FormGroup controlId="emailAddress">
+                                    <FormLabel>Email Address</FormLabel>
+                                    <FormControl
+                                        name="emailAddress"
+                                        type="email"
+                                        onChange={handleChange}
+                                        value={values.emailAddress}
+                                    />
+                                </FormGroup>
+                                <FormGroup controlId="password">
+                                    <FormLabel>Password</FormLabel>
+                                    <FormControl
+                                        placeholder="Password"
+                                        name="password"
+                                        type="password"
+                                        onChange={handleChange}
+                                        value={values.password}
+                                    />
+                                </FormGroup>
+                                <FormGroup controlId="rememberMe">
+                                    <FormCheck
+                                        label="Remember My Login"
+                                        name="rememberMe"
+                                        onChange={handleChange}
+                                        checked={values.rememberMe} />
+                                </FormGroup>
+                                <Button type="submit"
+                                    variant="primary">
+                                    Submit
+                                </Button>
+                            </Form>
+                        )}
+                </Formik>
+            </Container>
+        );
     }
 }
 
