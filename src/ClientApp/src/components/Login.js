@@ -1,5 +1,5 @@
 import React from 'react';
-import { Formik, Field, ErrorMessage } from 'formik';
+import { Formik, ErrorMessage } from 'formik';
 import Container from 'react-bootstrap/Container';
 import Form from 'react-bootstrap/Form';
 import FormGroup from 'react-bootstrap/FormGroup'
@@ -30,7 +30,9 @@ class Login extends React.Component {
                 >
                     {({
                         handleSubmit,
-                        getFieldProps
+                        getFieldProps,
+                        touched,
+                        errors
                     }) => (
                             <Form onSubmit={handleSubmit}>
                                 <FormGroup controlId="emailAddress">
@@ -39,9 +41,11 @@ class Login extends React.Component {
                                         placeholder="Enter your email address"
                                         name="emailAddress"
                                         type="email"
+                                        isInvalid={touched.emailAddress && errors.emailAddress}
+                                        isValid={touched.emailAddress && !errors.emailAddress}
                                         {...getFieldProps("emailAddress")}
                                     />
-                                    <ErrorMessage name="emailAddress" />
+                                   <ErrorMessage name="emailAddress" component="div" className="invalid-feedback d-inline" />
                                 </FormGroup>
                                 <FormGroup controlId="password">
                                     <FormLabel>Password</FormLabel>
@@ -49,9 +53,11 @@ class Login extends React.Component {
                                         placeholder="Enter your password"
                                         name="password"
                                         type="password"
+                                        isInvalid={touched.password && errors.password}
+                                        isValid={touched.password && !errors.password}
                                         {...getFieldProps("password")}
                                     />
-                                    <ErrorMessage name="password" />
+                                    <ErrorMessage name="password" component="div" className="invalid-feedback d-inline" />
                                 </FormGroup>
                                 <FormGroup controlId="rememberMe">
                                     <FormCheck
