@@ -8,14 +8,20 @@ import FormControl from 'react-bootstrap/FormControl'
 import FormCheck from 'react-bootstrap/FormCheck'
 import Button from 'react-bootstrap/Button';
 import * as Yup from 'yup';
+import QueryString from 'query-string';
 
 class Login extends React.Component {
+    getReturnUrl() {
+        const parsed = QueryString.parse(window.location.search);
+        return parsed.returnUrl;
+    }
+
     render() {
         return (
             <Container>
                 <h1>Sign-in</h1>
                 <Formik
-                    initialValues={{ emailAddress: "", password: "", rememberMe: false }}
+                    initialValues={{ emailAddress: "", password: "", rememberMe: false, returnUrl: this.getReturnUrl() }}
                     onSubmit={values => {
                         alert(JSON.stringify(values, null, 2));
                     }}
@@ -35,6 +41,7 @@ class Login extends React.Component {
                         errors
                     }) => (
                             <Form onSubmit={handleSubmit}>
+                                <FormControl type="hidden" name="returnUrl" id="returnUrl" {...getFieldProps("returnUrl")} />
                                 <FormGroup controlId="emailAddress">
                                     <FormLabel>Email Address</FormLabel>
                                     <FormControl
@@ -45,7 +52,7 @@ class Login extends React.Component {
                                         isValid={touched.emailAddress && !errors.emailAddress}
                                         {...getFieldProps("emailAddress")}
                                     />
-                                   <ErrorMessage name="emailAddress" component="div" className="invalid-feedback d-inline" />
+                                    <ErrorMessage name="emailAddress" component="div" className="invalid-feedback d-inline" />
                                 </FormGroup>
                                 <FormGroup controlId="password">
                                     <FormLabel>Password</FormLabel>
