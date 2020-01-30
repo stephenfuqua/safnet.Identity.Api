@@ -34,6 +34,7 @@
     <Compile Include="Infrastructure\Persistence\IRepository.cs" />
     <Compile Include="Services\Controllers\ClientsController.cs" />
     <Compile Include="Services\Controllers\PingController.cs" />
+    <Compile Include="Services\Models\MessageModel.cs" />
   </ItemGroup>
 
   <ItemGroup>

@@ -4,9 +4,11 @@ using System.Threading.Tasks;
 using FakeItEasy;
 using IdentityServer4.Models;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using NUnit.Framework;
 using safnet.Identity.Api.Infrastructure.Persistence;
 using safnet.Identity.Api.Services.Controllers;
+using safnet.Identity.Api.Services.Models;
 using Shouldly;
 
 // ReSharper disable InconsistentNaming
@@ -181,6 +183,9 @@ namespace safnet.Identity.Api.UnitTests.Services.Controllers
                 {
                     base.SetUp();
 
+                    A.CallTo(() => ClientRepository.GetByClientIdAsync(ClientId))
+                        .Returns(Task.FromResult(null as Client));
+
                     Result = System.Post(_model).Result as CreatedAtRouteResult;
                 }
 
@@ -256,6 +261,47 @@ namespace safnet.Identity.Api.UnitTests.Services.Controllers
                         () => (((SerializableError)Result.Value)[ErrorKey] as string[])?[0].ShouldBe(ErrorValue)
                     );
                 }
+
+                [Test]
+                public void Then_should_not_check_if_client_id_exists_already()
+                {
+                    A.CallTo(() => ClientRepository.GetByClientIdAsync(A<string>._))
+                        .MustNotHaveHappened();
+                }
+            }
+
+            [TestFixture]
+            public class Given_client_id_already_exists : When_creating_a_new_client
+            {
+                [SetUp]
+                protected override void SetUp()
+                {
+                    base.SetUp();
+
+                    A.CallTo(() => ClientRepository.GetByClientIdAsync(ClientId))
+                        .Returns(Task.FromResult(new Client()));
+
+                    Result = System.Post(_model).Result as ConflictObjectResult;
+                }
+
+                private const string ClientId = "edsafg";
+
+                private readonly Client _model = new Client { ClientId = ClientId };
+
+                protected ConflictObjectResult Result;
+                
+                [Test]
+                public void Then_respond_with_status_code_409()
+                {
+                    Result.ShouldNotBeNull();
+                }
+
+                [Test]
+                public void Then_response_message_should_describe_the_problem()
+                {
+                    (Result.Value as MessageModel)?.Message.ShouldBe(ClientsController.ErrorMessageClientAlreadyExists);
+                }
+
             }
         }
 

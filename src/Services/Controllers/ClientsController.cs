@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using safnet.Common.GenericExtensions;
 using safnet.Identity.Api.Infrastructure.Persistence;
+using safnet.Identity.Api.Services.Models;
 
 namespace safnet.Identity.Api.Services.Controllers
 {
@@ -12,6 +13,8 @@ namespace safnet.Identity.Api.Services.Controllers
     public class ClientsController : ControllerBase
     {
         public const string ClientIdRouteName = "GetByClientId";
+
+        public const string ErrorMessageClientAlreadyExists = "The provided client ID already exists";
 
         private readonly IClientRepository _clientRepository;
 
@@ -47,6 +50,13 @@ namespace safnet.Identity.Api.Services.Controllers
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
+            }
+
+            var existing = await _clientRepository.GetByClientIdAsync(model.ClientId);
+
+            if (existing != null)
+            {
+                return Conflict(new MessageModel(ErrorMessageClientAlreadyExists));
             }
 
             await _clientRepository.CreateAsync(model);
