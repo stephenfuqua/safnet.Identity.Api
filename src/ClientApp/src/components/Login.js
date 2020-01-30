@@ -9,11 +9,47 @@ import FormCheck from 'react-bootstrap/FormCheck'
 import Button from 'react-bootstrap/Button';
 import * as Yup from 'yup';
 import QueryString from 'query-string';
+import Axios from 'axios';
 
 class Login extends React.Component {
     getReturnUrl() {
         const parsed = QueryString.parse(window.location.search);
         return parsed.returnUrl;
+    }
+
+    postCredentialsToServer(formValues) {
+        // Temporary hard-coding of values. Learning one thing at a time -
+        // right it is learning Axios, not React external configuration.
+        const oauthTokenUrl = "https://localhost:44373/connect/token";
+
+        const params = {
+            client_id: formValues.emailAddress,
+            client_secret: formValues.password,
+            // Long term not going to be using client credentials with this form.
+            // Again, focused on learning interfaces at the moment, then
+            // will straighten this out.
+            grant_type: "client_credential",
+            scope: "admin"
+        };
+
+        Axios.post(oauthTokenUrl, QueryString.stringify(params))
+            .then(function (response) {
+
+                // TODO: parse response, get token(?), redirect to correct URL.
+                // This redirect thing only makes sense if hosting a central
+                // server that supports multiple applications. But standing
+                // up an OAuth2 server is probably not the real goal here.
+                // Rethink this. Might be appropriate to just use ASP.NET
+                // Identity. Still would like to use JWT instead of Cookies.
+
+                console.info(response);
+            })
+            .catch(function (error) {
+
+                // TODO: something meaningful =D
+
+                console.error(error);
+            });
     }
 
     render() {
@@ -24,6 +60,8 @@ class Login extends React.Component {
                     initialValues={{ emailAddress: "", password: "", rememberMe: false, returnUrl: this.getReturnUrl() }}
                     onSubmit={values => {
                         alert(JSON.stringify(values, null, 2));
+                        
+                        this.postCredentialsToServer(values);
                     }}
                     validationSchema={Yup.object({
                         password: Yup.string()
