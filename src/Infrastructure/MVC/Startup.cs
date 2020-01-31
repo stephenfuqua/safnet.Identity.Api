@@ -8,6 +8,7 @@ using IdentityServer4.Stores;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SpaServices.ReactDevelopmentServer;
 using Microsoft.EntityFrameworkCore;
@@ -16,6 +17,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using safnet.Common.GenericExtensions;
 using safnet.Identity.Api.Infrastructure.Persistence;
+using safnet.Identity.Api.Services.Adapters;
 using safnet.Identity.Database;
 using Serilog;
 
@@ -40,8 +42,9 @@ namespace safnet.Identity.Api.Infrastructure.MVC
 
             var connectionString = Configuration.GetConnectionString(Constants.IdentityConnectionStringName);
 
-            ConfigurePersistence(connectionString);
-            ConfigureIdentityServer(connectionString);
+            ConfigurePersistence();
+            ConfigureAspNetIdentity();
+            ConfigureIdentityServer();
             ConfigureMvc();
             ConfigureLogging();
             ConfigureBearerAuth();
@@ -62,21 +65,22 @@ namespace safnet.Identity.Api.Infrastructure.MVC
                 });
             }
 
-            void ConfigureIdentityServer(string conString)
+            void ConfigureIdentityServer()
             {
                 var identityServerBuilder = services
                     .AddIdentityServer()
                     .AddConfigurationStore(options =>
                     {
-                        options.ConfigureDbContext = builder => builder.UseSqlServer(conString);
+                        options.ConfigureDbContext = builder => builder.UseSqlServer(connectionString);
                     })
                     .AddOperationalStore(options =>
                     {
-                        options.ConfigureDbContext = builder => builder.UseSqlServer(conString);
+                        options.ConfigureDbContext = builder => builder.UseSqlServer(connectionString);
                         options.EnableTokenCleanup = true;
                         options.TokenCleanupInterval = 30;
                     })
-                    .AddClientStoreCache<CachingClientStore<ClientStore>>();
+                    .AddClientStoreCache<CachingClientStore<ClientStore>>()
+                    .AddAspNetIdentity<IdentityUser>();
 
                 if (_env.IsDevelopment())
                 {
@@ -88,17 +92,18 @@ namespace safnet.Identity.Api.Infrastructure.MVC
                 }
 
                 services.AddSingleton<ICache<Client>, DefaultCache<Client>>();
-            }
-
-            void ConfigurePersistence(string conString)
-            {
-                DbInstaller.Run(conString, Configuration);
 
                 services.AddDbContext<ConfigurationDbContext>(options =>
                 {
                     options.UseSqlServer(connectionString);
                     options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
                 });
+            }
+
+            void ConfigurePersistence()
+            {
+                // Using DbUp to install scripts, instead of EF Migrations
+                DbInstaller.Run(connectionString, Configuration);
 
                 services.AddTransient<IRepository<Client>, ClientRepository>();
                 services.AddTransient<IClientRepository, ClientRepository>();
@@ -112,13 +117,25 @@ namespace safnet.Identity.Api.Infrastructure.MVC
             void ConfigureBearerAuth()
             {
                 var jwtAuthorityUrl = Configuration.GetValue<string>("JwtAuthorityUrl");
+
                 services.AddAuthentication("Bearer")
                     .AddJwtBearer("Bearer", options =>
                     {
-                        options.Authority = jwtAuthorityUrl; //"https://localhost:44373";
+                        options.Authority = jwtAuthorityUrl;
                         options.RequireHttpsMetadata = false;
                         options.Audience = "admin";
                     });
+            }
+
+            void ConfigureAspNetIdentity()
+            {
+                services.AddDbContext<UserDbContext>(builder =>
+                    builder.UseSqlServer(connectionString));
+
+                services.AddIdentity<IdentityUser, IdentityRole>()
+                    .AddEntityFrameworkStores<UserDbContext>();
+
+                services.AddTransient<IUserManager, UserManagerAdapter>();
             }
         }
 
@@ -156,7 +173,7 @@ namespace safnet.Identity.Api.Infrastructure.MVC
                     {
                         spa.UseReactDevelopmentServer(npmScript: "start");
                     }
-                }); ;
+                });
         }
     }
 }

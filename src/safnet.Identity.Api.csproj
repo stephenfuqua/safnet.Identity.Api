@@ -30,10 +30,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="Infrastructure\Persistence\UserDbContext.cs" />
     <Compile Include="Infrastructure\Persistence\ClientRepository.cs" />
     <Compile Include="Infrastructure\Persistence\IRepository.cs" />
+    <Compile Include="Services\Adapters\IUserManager.cs" />
+    <Compile Include="Services\Adapters\UserManagerAdapter.cs" />
     <Compile Include="Services\Controllers\ClientsController.cs" />
     <Compile Include="Services\Controllers\PingController.cs" />
+    <Compile Include="Services\Controllers\UsersController.cs" />
     <Compile Include="Services\Models\MessageModel.cs" />
   </ItemGroup>
 
@@ -43,6 +47,7 @@
     <PackageReference Include="IdentityServer4.AspNetIdentity" Version="2.5.4" />
     <PackageReference Include="IdentityServer4.EntityFramework" Version="2.5.4" />
     <PackageReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="2.2.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="2.2.6" />
     <PackageReference Include="safnet.Common" Version="1.0.0-pre2" />
     <PackageReference Include="Serilog.AspNetcore" Version="2.1.1" />
