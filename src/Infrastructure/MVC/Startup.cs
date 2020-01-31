@@ -66,7 +66,6 @@ namespace safnet.Identity.Api.Infrastructure.MVC
             {
                 var identityServerBuilder = services
                     .AddIdentityServer()
-                    .AddDeveloperSigningCredential()
                     .AddConfigurationStore(options =>
                     {
                         options.ConfigureDbContext = builder => builder.UseSqlServer(conString);
