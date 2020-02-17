@@ -15,7 +15,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using safnet.Common.Api.Middleware;
 using safnet.Common.GenericExtensions;
+using safnet.Identity.Api.Domain.Entities;
 using safnet.Identity.Api.Infrastructure.Persistence;
 using safnet.Identity.Api.Services.Adapters;
 using safnet.Identity.Database;
@@ -68,7 +70,13 @@ namespace safnet.Identity.Api.Infrastructure.MVC
             void ConfigureIdentityServer()
             {
                 var identityServerBuilder = services
-                    .AddIdentityServer()
+                    .AddIdentityServer(options =>
+                    {
+                        options.Events.RaiseErrorEvents = true;
+                        options.Events.RaiseInformationEvents = true;
+                        options.Events.RaiseFailureEvents = true;
+                        options.Events.RaiseSuccessEvents = true;
+                    })
                     .AddConfigurationStore(options =>
                     {
                         options.ConfigureDbContext = builder => builder.UseSqlServer(connectionString);
@@ -80,7 +88,7 @@ namespace safnet.Identity.Api.Infrastructure.MVC
                         options.TokenCleanupInterval = 30;
                     })
                     .AddClientStoreCache<CachingClientStore<ClientStore>>()
-                    .AddAspNetIdentity<IdentityUser>();
+                    .AddAspNetIdentity<ApplicationUser>();
 
                 if (_env.IsDevelopment())
                 {
@@ -132,7 +140,7 @@ namespace safnet.Identity.Api.Infrastructure.MVC
                 services.AddDbContext<UserDbContext>(builder =>
                     builder.UseSqlServer(connectionString));
 
-                services.AddIdentity<IdentityUser, IdentityRole>()
+                services.AddIdentity<ApplicationUser, IdentityRole>()
                     .AddEntityFrameworkStores<UserDbContext>();
 
                 services.AddTransient<IUserManager, UserManagerAdapter>();
@@ -150,7 +158,7 @@ namespace safnet.Identity.Api.Infrastructure.MVC
             }
             else
             {
-                app.UseExceptionHandler("/Error");
+                //app.UseExceptionHandler("/Error");
                 // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
@@ -160,12 +168,9 @@ namespace safnet.Identity.Api.Infrastructure.MVC
             app.UseHttpsRedirection()
                 .UseMiddleware<ExceptionLoggingMiddleware>()
                 .UseIdentityServer()
-                .UseMvc(routes =>
-                {
-                    routes.MapRoute(
-                        name: "default",
-                        template: "{controller}/{action=Index}/{id?}");
-                }).UseSpa(spa =>
+                //.UseAuthentication()
+                .UseMvcWithDefaultRoute()
+                .UseSpa(spa =>
                 {
                     spa.Options.SourcePath = "ClientApp";
 
@@ -173,7 +178,8 @@ namespace safnet.Identity.Api.Infrastructure.MVC
                     {
                         spa.UseReactDevelopmentServer(npmScript: "start");
                     }
-                });
+                })
+                ;
         }
     }
 }

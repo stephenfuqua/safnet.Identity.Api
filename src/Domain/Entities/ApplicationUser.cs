@@ -7,7 +7,7 @@ namespace safnet.Identity.Api.Domain.Entities
     /// <summary>
     /// Models a user in the application.
     /// </summary>
-    public class ApplicationUser : IdentityUser
+    public class User : IdentityUser
     {
         /// <summary>
         /// Reg ex pattern for "First Last &lt;email&gt;"
@@ -94,7 +94,7 @@ namespace safnet.Identity.Api.Domain.Entities
         /// <summary>
         /// Creates a new <see cref="User"/>, initially in the inactive state.
         /// </summary>
-        public ApplicationUser()
+        public User()
         {
             Active = StatusInactive;
         }

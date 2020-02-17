@@ -30,6 +30,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="Domain\Entities\User.cs" />
     <Compile Include="Infrastructure\Persistence\UserDbContext.cs" />
     <Compile Include="Infrastructure\Persistence\ClientRepository.cs" />
     <Compile Include="Infrastructure\Persistence\IRepository.cs" />
@@ -47,6 +48,8 @@
     <PackageReference Include="IdentityServer4.AspNetIdentity" Version="2.5.4" />
     <PackageReference Include="IdentityServer4.EntityFramework" Version="2.5.4" />
     <PackageReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="2.2.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authorization" Version="2.2.0" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="2.2.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="2.2.6" />
     <PackageReference Include="safnet.Common" Version="1.0.0-pre2" />
@@ -56,6 +59,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\safnet.Common.Api\src\safnet.Common.Api.csproj" />
     <ProjectReference Include="..\database\safnet.Identity.Database.csproj" />
   </ItemGroup>
 
