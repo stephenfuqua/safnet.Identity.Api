@@ -22,7 +22,7 @@ export default class NavMenu extends React.Component {
       <header>
         <Navbar className="navbar-expand-sm navbar-toggleable-sm border-bottom box-shadow mb-3" light >
           <Container>
-            <NavbarBrand tag={Link} to="/">ReactApp</NavbarBrand>
+            <NavbarBrand tag={Link} to="/">safnet.identity.OAuth2</NavbarBrand>
             <NavbarToggler onClick={this.toggle} className="mr-2" />
             <Collapse className="d-sm-inline-flex flex-sm-row-reverse" isOpen={this.state.isOpen} navbar>
               <ul className="navbar-nav flex-grow">
@@ -30,10 +30,7 @@ export default class NavMenu extends React.Component {
                   <NavLink tag={Link} className="text-dark" to="/">Home</NavLink>
                 </NavItem>
                 <NavItem>
-                  <NavLink tag={Link} className="text-dark" to="/counter">Counter</NavLink>
-                </NavItem>
-                <NavItem>
-                  <NavLink tag={Link} className="text-dark" to="/fetch-data">Fetch data</NavLink>
+                  <NavLink tag={Link} className="text-dark" to="/login">Login</NavLink>
                 </NavItem>
               </ul>
             </Collapse>
