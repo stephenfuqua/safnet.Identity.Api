@@ -19,7 +19,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "safnet.Common.Api.UnitTests
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "safnet.identity.OAuth2", "src\safnet.Identity.OAuth2\safnet.identity.OAuth2.csproj", "{A6FC7723-4332-48C0-BC6C-AE8AC1741630}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "safnet.Identity.Api", "src\safnet.Identity.Api\safnet.Identity.Api.csproj", "{877D8D0C-9F01-4F9D-9571-2F6C9409F48E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "safnet.identity.api", "src\safnet.Identity.Api\safnet.identity.api.csproj", "{877D8D0C-9F01-4F9D-9571-2F6C9409F48E}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "safnet.identity.common", "src\safnet.identity.common\safnet.identity.common.csproj", "{E9C4AE0C-E525-4703-949B-4453E055CB71}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -51,6 +53,10 @@ Global
 		{877D8D0C-9F01-4F9D-9571-2F6C9409F48E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{877D8D0C-9F01-4F9D-9571-2F6C9409F48E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{877D8D0C-9F01-4F9D-9571-2F6C9409F48E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E9C4AE0C-E525-4703-949B-4453E055CB71}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E9C4AE0C-E525-4703-949B-4453E055CB71}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E9C4AE0C-E525-4703-949B-4453E055CB71}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E9C4AE0C-E525-4703-949B-4453E055CB71}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -62,6 +68,7 @@ Global
 		{95405D35-67CC-4D66-AF4F-EF37E8AE8AA6} = {9D566AE9-9372-4CBF-9F18-5378EDF571C6}
 		{A6FC7723-4332-48C0-BC6C-AE8AC1741630} = {8D3536B3-6174-4980-BB56-ECF5DC7D622D}
 		{877D8D0C-9F01-4F9D-9571-2F6C9409F48E} = {8D3536B3-6174-4980-BB56-ECF5DC7D622D}
+		{E9C4AE0C-E525-4703-949B-4453E055CB71} = {8D3536B3-6174-4980-BB56-ECF5DC7D622D}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {F0F5C0D8-75B0-4523-A1C5-3F00001DC9E4}

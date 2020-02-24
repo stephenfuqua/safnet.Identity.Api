@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity;
 
-namespace safnet.Identity.Api.Services.Adapters
+namespace safnet.identity.common.Services.Adapters
 {
     public interface IUserManager
     {

@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
-using safnet.Identity.Api.Infrastructure.MVC;
 using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
@@ -51,7 +50,7 @@ namespace safnet.identity.OAuth2
                     .MinimumLevel.Override("System", LogEventLevel.Warning)
                     .MinimumLevel.Override("Microsoft.AspNetCore.Authentication", LogEventLevel.Information)
                     .Enrich.FromLogContext()
-                    .WriteTo.File(@"safnet.Identity.Api.log")
+                    .WriteTo.File(@"safnet.Identity.OAuth2.log")
                     .WriteTo.Console(
                         outputTemplate:
                         "[{Timestamp:HH:mm:ss} {Level}] {SourceContext}{NewLine}{Message:lj}{NewLine}{Exception}{NewLine}",

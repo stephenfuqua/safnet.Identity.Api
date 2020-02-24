@@ -17,18 +17,18 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using safnet.Common.Api.Middleware;
 using safnet.Common.GenericExtensions;
-using safnet.Identity.Api.Domain.Entities;
-using safnet.Identity.Api.Infrastructure.Persistence;
-using safnet.Identity.Api.Services.Adapters;
-using safnet.Identity.Database;
-using safnet.identity.OAuth2;
+using safnet.identity.common.Domain.Entities;
+using safnet.identity.common.Infrastructure.Persistence;
+using safnet.identity.common.Services.Adapters;
 using Serilog;
 
-namespace safnet.Identity.Api.Infrastructure.MVC
+namespace safnet.identity.OAuth2
 {
     [ExcludeFromCodeCoverage]
     public class Startup
     {
+        public const string IdentityConnectionStringName = "Identity";
+
         private readonly IHostingEnvironment _env;
 
         public Startup(IConfiguration configuration, IHostingEnvironment env)
@@ -43,15 +43,15 @@ namespace safnet.Identity.Api.Infrastructure.MVC
         {
             services.MustNotBeNull(nameof(services));
 
-            var connectionString = Configuration.GetConnectionString(Constants.IdentityConnectionStringName);
+            var connectionString = Configuration.GetConnectionString(IdentityConnectionStringName);
 
-            ConfigurePersistence();
             ConfigureAspNetIdentity();
             ConfigureIdentityServer();
             ConfigureMvc();
             ConfigureLogging();
             ConfigureBearerAuth();
             ConfigureReact();
+            ConfigureCors();
 
             void ConfigureMvc()
             {
@@ -108,16 +108,6 @@ namespace safnet.Identity.Api.Infrastructure.MVC
                     options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
                 });
             }
-
-            void ConfigurePersistence()
-            {
-                // Using DbUp to install scripts, instead of EF Migrations
-                DbInstaller.Run(connectionString, Configuration);
-
-                services.AddTransient<IRepository<Client>, ClientRepository>();
-                services.AddTransient<IClientRepository, ClientRepository>();
-            }
-
             void ConfigureLogging()
             {
                 services.AddLogging(builder => builder.AddSerilog(dispose: true));
@@ -145,6 +135,19 @@ namespace safnet.Identity.Api.Infrastructure.MVC
                     .AddEntityFrameworkStores<UserDbContext>();
 
                 services.AddTransient<IUserManager, UserManagerAdapter>();
+            }
+
+            void ConfigureCors()
+            {
+                services.AddCors(options =>
+                {
+                    options.AddPolicy("default", policy =>
+                    {
+                        policy.WithOrigins("https://localhost:44309")
+                            .AllowAnyHeader()
+                            .AllowAnyMethod();
+                    });
+                });
             }
         }
 

@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity;
 using safnet.Common.GenericExtensions;
 
-namespace safnet.Identity.Api.Services.Adapters
+namespace safnet.identity.common.Services.Adapters
 {
     [ExcludeFromCodeCoverage]
     public class UserManagerAdapter : IUserManager

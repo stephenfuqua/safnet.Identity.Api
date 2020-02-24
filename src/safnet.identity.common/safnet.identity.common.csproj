@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Domain\Entities\ChangeForgottenPasswordResult.cs" />
+    <Compile Remove="Domain\Entities\Role.cs" />
+    <Compile Remove="Domain\Entities\RoleEnum.cs" />
+    <Compile Remove="Domain\Entities\UserClaim.cs" />
+    <Compile Remove="Domain\Entities\UserLogin.cs" />
+    <Compile Remove="Domain\Entities\UserRole.cs" />
+    <Compile Remove="Domain\Interfaces\IRoleManager.cs" />
+    <Compile Remove="Domain\Interfaces\IRolePersistence.cs" />
+    <Compile Remove="Domain\Interfaces\IUserDomainManager.cs" />
+    <Compile Remove="Domain\Interfaces\IUserPersistence.cs" />
+    <Compile Remove="Domain\Managers\RoleDomainManager.cs" />
+    <Compile Remove="Domain\Managers\UserDomainManager.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Domain\Interfaces\" />
+    <Folder Include="Domain\Managers\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="2.2.0" />
+    <PackageReference Include="safnet.Common" Version="1.0.0-pre2" />
+  </ItemGroup>
+</Project>

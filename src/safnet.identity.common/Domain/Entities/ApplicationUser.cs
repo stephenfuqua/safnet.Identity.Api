@@ -2,12 +2,12 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Identity;
 
-namespace safnet.Identity.Api.Domain.Entities
+namespace safnet.identity.common.Domain.Entities
 {
     /// <summary>
     /// Models a user in the application.
     /// </summary>
-    public class User : IdentityUser
+    public class ApplicationUser : IdentityUser
     {
         /// <summary>
         /// Reg ex pattern for "First Last &lt;email&gt;"
@@ -90,11 +90,11 @@ namespace safnet.Identity.Api.Domain.Entities
         /// </summary>
         [StringLength(10)]
         public string ZipCode { get; set; }
-        
+
         /// <summary>
-        /// Creates a new <see cref="User"/>, initially in the inactive state.
+        /// Creates a new <see cref="ApplicationUser"/>, initially in the inactive state.
         /// </summary>
-        public User()
+        public ApplicationUser()
         {
             Active = StatusInactive;
         }

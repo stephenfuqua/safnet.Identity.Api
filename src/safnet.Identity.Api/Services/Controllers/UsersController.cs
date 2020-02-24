@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using safnet.Common.GenericExtensions;
-using safnet.Identity.Api.Services.Adapters;
+using safnet.identity.common.Services.Adapters;
 
 namespace safnet.Identity.Api.Services.Controllers
 {

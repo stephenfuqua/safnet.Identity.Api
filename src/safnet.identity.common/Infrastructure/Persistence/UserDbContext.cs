@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using safnet.Identity.Api.Domain.Entities;
+using safnet.identity.common.Domain.Entities;
 
-namespace safnet.Identity.Api.Infrastructure.Persistence
+namespace safnet.identity.common.Infrastructure.Persistence
 {
     public class UserDbContext : IdentityDbContext<ApplicationUser>
     {
